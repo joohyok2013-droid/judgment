@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI T-BALL UMPIRE</title>
+<style>
+/* ===== 1. 디자인 (색깔과 모양) ===== */
+:root{
+  --safe:#1fb954; --out:#e5283b; --unknown:#f5c400; --busy:#2f80ed;
+  --bg:#000; --panel:#141414; --line:#333; --text:#fff; --muted:#999;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,"Apple SD Gothic Neo","Malgun Gothic",sans-serif}
+.screen{display:none;min-height:100vh;padding:20px}
+.screen.active{display:block}
+h1{margin:0 0 6px;font-size:28px;letter-spacing:1px}
+h2{margin:0 0 12px;font-size:20px}
+.sub{color:var(--muted);margin:0 0 24px}
+.btn{font-size:22px;font-weight:700;padding:18px 28px;border-radius:14px;border:2px solid #fff;background:#fff;color:#000;cursor:pointer;min-height:64px}
+.btn.dark{background:#000;color:#fff}
+.btn.start{background:var(--safe);border-color:var(--safe);color:#000}
+.btn.stop{background:var(--out);border-color:var(--out);color:#fff}
+.btn:disabled{opacity:.35;cursor:not-allowed}
+.row{display:flex;gap:14px;flex-wrap:wrap;align-items:center}
+.top{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:18px;flex-wrap:wrap}
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+.card{background:var(--panel);border:2px solid var(--line);border-radius:18px;padding:18px}
+.card .name{font-size:24px;font-weight:800}
+.badge{display:inline-block;padding:6px 12px;border-radius:999px;font-size:16px;font-weight:700;background:#333}
+.badge.on{background:var(--safe);color:#000}
+.badge.off{background:#444;color:#ccc}
+/* 판정 표시 영역 */
+.verdict{margin-top:14px;border-radius:14px;text-align:center;font-weight:900;padding:26px 8px;font-size:44px;background:#222;color:#777;letter-spacing:2px}
+.verdict.SAFE{background:var(--safe);color:#000}
+.verdict.OUT{background:var(--out);color:#fff}
+.verdict.UNKNOWN{background:var(--unknown);color:#000;font-size:34px}
+.verdict.BUSY{background:var(--busy);color:#fff;font-size:34px}
+.verdict.big{font-size:90px;padding:50px 8px}
+.verdict.big.UNKNOWN,.verdict.big.BUSY{font-size:64px}
+/* 카메라 화면 */
+.basepick{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}
+.basepick .btn{font-size:24px}
+.basepick .btn.sel{background:#fff;color:#000}
+.basepick .btn:not(.sel){background:#000;color:#fff}
+.video{background:#0b0b0b;border:2px dashed var(--line);border-radius:18px;aspect-ratio:16/9;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:20px;text-align:center;padding:10px}
+.statuslist{margin:14px 0;display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.statuslist div{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px;font-size:17px}
+.devbox{margin-top:26px;border:1px dashed #555;border-radius:14px;padding:14px;color:var(--muted);font-size:15px}
+.devbox .btn{font-size:16px;padding:10px 14px;min-height:44px;margin:4px 4px 0 0}
+.note{color:var(--muted);font-size:15px;margin-top:10px}
+@media(max-width:700px){.grid{grid-template-columns:1fr}.basepick{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+
+<!-- ===== 2. 화면 모양 (HTML) ===== -->
+
+<!-- 시작 화면: 역할 고르기 -->
+<section id="screen-home" class="screen active">
+  <h1>AI T-BALL UMPIRE</h1>
+  <p class="sub">이 태블릿의 역할을 선택하세요.</p>
+  <div class="row">
+    <button class="btn" onclick="App.show('center')">중앙 심판 화면</button>
+    <button class="btn dark" onclick="App.show('camera')">촬영용 화면</button>
+  </div>
+</section>
+
+<!-- 중앙 심판 화면 -->
+<section id="screen-center" class="screen">
+  <div class="top">
+    <div><h1>중앙 심판</h1><span id="gameState" class="badge off">경기 대기 중</span></div>
+    <div class="row">
+      <button id="btnStart" class="btn start" onclick="App.startGame()">경기 시작</button>
+      <button id="btnEnd" class="btn stop" onclick="App.endGame()" disabled>경기 종료</button>
+      <button class="btn dark" onclick="App.show('home')">처음으로</button>
+    </div>
+  </div>
+  <div class="grid" id="centerGrid"></div>
+  <p class="note">※ 1단계: 아직 태블릿끼리 연결되지 않았습니다. 카메라 상태는 모두 "연결 안 됨"이 정상입니다. (9단계에서 연결)</p>
+  <div class="devbox">
+    🛠 테스트용 버튼 (화면 색깔 확인용, 실제 AI 판정이 아닙니다)<br>
+    <span id="centerDev"></span>
+  </div>
+</section>
+
+<!-- 촬영용 태블릿 화면 -->
+<section id="screen-camera" class="screen">
+  <div class="top">
+    <h1>촬영용 태블릿</h1>
+    <button class="btn dark" onclick="App.show('home')">처음으로</button>
+  </div>
+  <h2>담당 베이스 선택</h2>
+  <div class="basepick" id="basePick"></div>
+  <div class="video" id="videoBox">카메라 화면이 나올 자리입니다<br>(3단계에서 연결)</div>
+  <div class="row" style="margin:14px 0">
+    <button class="btn start" disabled>카메라 시작</button>
+    <button class="btn stop" disabled>카메라 종료</button>
+  </div>
+  <div class="statuslist">
+    <div>카메라: <b id="stCam">꺼짐</b></div>
+    <div>AI 인식: <b id="stAi">준비 안 됨</b></div>
+    <div>주자 인식: <b id="stRunner">준비 안 됨</b></div>
+    <div>네트워크: <b id="stNet">연결 안 됨</b></div>
+  </div>
+  <div id="camVerdict" class="verdict big">대기</div>
+  <div class="devbox">
+    🛠 테스트용 버튼 (화면 색깔 확인용, 실제 AI 판정이 아닙니다)<br>
+    <span id="camDev"></span>
+  </div>
+</section>
+
+<script>
+/* ===== 3. 동작 (JavaScript) =====
+   나중에 AI 기능을 붙일 때는 아래 App.setVerdict(베이스, 판정) 만 불러주면 됩니다.
+   판정 값: "SAFE", "OUT", "UNKNOWN"(판정 불가), "BUSY"(분석 중), "NONE"(대기)
+*/
+const BASES = [
+  {id:"1B", label:"1루"},
+  {id:"2B", label:"2루"},
+  {id:"3B", label:"3루"},
+  {id:"HOME", label:"홈"}
+];
+const VERDICT_TEXT = {SAFE:"SAFE", OUT:"OUT", UNKNOWN:"판정 불가", BUSY:"분석 중", NONE:"대기"};
+
+const App = {
+  // 앱이 기억하는 정보. 지금은 이 화면 안에서만 저장됩니다.
+  state: {
+    gameRunning: false,
+    myBase: "1B",
+    bases: {
+      "1B":{connected:false, verdict:"NONE"},
+      "2B":{connected:false, verdict:"NONE"},
+      "3B":{connected:false, verdict:"NONE"},
+      "HOME":{connected:false, verdict:"NONE"}
+    }
+  },
+
+  show(name){
+    document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
+    document.getElementById("screen-"+name).classList.add("active");
+  },
+
+  // 나중에 AI가 판정을 내리면 이 함수를 부르면 됩니다.
+  setVerdict(baseId, verdict){
+    this.state.bases[baseId].verdict = verdict;
+    this.render();
+  },
+
+  // 나중에 카메라 연결이 되면 이 함수로 상태를 바꿉니다.
+  setConnected(baseId, isConnected){
+    this.state.bases[baseId].connected = isConnected;
+    this.render();
+  },
+
+  startGame(){
+    // 규칙: 네 카메라가 모두 연결되어야 시작 (9단계 전까지는 테스트 버튼으로 확인)
+    const notReady = BASES.filter(b=>!this.state.bases[b.id].connected).map(b=>b.label);
+    if(notReady.length){
+      alert("아직 연결되지 않은 카메라: "+notReady.join(", ")+"\n모든 카메라가 연결되어야 경기를 시작할 수 있습니다.");
+      return;
+    }
+    this.state.gameRunning = true;
+    this.render();
+  },
+
+  endGame(){
+    if(!confirm("경기를 종료할까요?")) return;
+    this.state.gameRunning = false;
+    BASES.forEach(b=>this.state.bases[b.id].verdict="NONE");
+    this.render();
+  },
+
+  selectBase(id){
+    this.state.myBase = id;
+    this.render();
+  },
+
+  render(){
+    const s = this.state;
+    // 중앙 화면
+    document.getElementById("centerGrid").innerHTML = BASES.map(b=>{
+      const d = s.bases[b.id];
+      return `<div class="card">
+        <div class="row" style="justify-content:space-between">
+          <span class="name">${b.label}</span>
+          <span class="badge ${d.connected?"on":"off"}">${d.connected?"연결됨":"연결 안 됨"}</span>
+        </div>
+        <div class="verdict ${d.verdict}">${VERDICT_TEXT[d.verdict]}</div>
+      </div>`;
+    }).join("");
+    const gs = document.getElementById("gameState");
+    gs.textContent = s.gameRunning ? "경기 진행 중" : "경기 대기 중";
+    gs.className = "badge " + (s.gameRunning ? "on" : "off");
+    document.getElementById("btnStart").disabled = s.gameRunning;
+    document.getElementById("btnEnd").disabled = !s.gameRunning;
+
+    // 촬영 화면
+    document.getElementById("basePick").innerHTML = BASES.map(b=>
+      `<button class="btn ${s.myBase===b.id?"sel":""}" onclick="App.selectBase('${b.id}')">${b.label}</button>`).join("");
+    const mine = s.bases[s.myBase];
+    const cv = document.getElementById("camVerdict");
+    cv.className = "verdict big " + mine.verdict;
+    cv.textContent = VERDICT_TEXT[mine.verdict];
+    document.getElementById("stNet").textContent = mine.connected ? "연결됨" : "연결 안 됨";
+  }
+};
+
+// 테스트 버튼 만들기
+const devHtml = (fn)=>["SAFE","OUT","UNKNOWN","BUSY","NONE"].map(v=>
+  `<button class="btn dark" onclick="${fn}('${v}')">${VERDICT_TEXT[v]}</button>`).join("");
+window.testCenter = v => BASES.forEach(b=>App.setVerdict(b.id, v));
+window.testCam = v => App.setVerdict(App.state.myBase, v);
+window.testConnect = () => { BASES.forEach(b=>App.setConnected(b.id, true)); };
+window.testDisconnect = () => { BASES.forEach(b=>App.setConnected(b.id, false)); };
+document.getElementById("centerDev").innerHTML =
+  `<button class="btn dark" onclick="testConnect()">카메라 4대 연결된 척하기</button>
+   <button class="btn dark" onclick="testDisconnect()">모두 연결 끊기</button><br>` + devHtml("testCenter");
+document.getElementById("camDev").innerHTML = devHtml("testCam");
+
+App.render();
+</script>
+</body>
+</html>
