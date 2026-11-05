@@ -49,6 +49,10 @@ h2{margin:0 0 12px;font-size:20px}
 .devbox{margin-top:26px;border:1px dashed #555;border-radius:14px;padding:14px;color:var(--muted);font-size:15px}
 .devbox .btn{font-size:16px;padding:10px 14px;min-height:44px;margin:4px 4px 0 0}
 .note{color:var(--muted);font-size:15px;margin-top:10px}
+.codebox{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:18px;background:var(--panel);border:2px solid var(--line);border-radius:18px;padding:14px 18px}
+.codebox .label{color:var(--muted);font-size:18px}
+.codebox .code{font-size:44px;font-weight:900;letter-spacing:8px;font-family:ui-monospace,monospace}
+.codeinput{font-size:30px;font-weight:800;letter-spacing:6px;text-transform:uppercase;text-align:center;width:240px;padding:12px;border-radius:14px;border:2px solid #fff;background:#000;color:#fff;min-height:64px}
 @media(max-width:700px){.grid{grid-template-columns:1fr}.basepick{grid-template-columns:repeat(2,1fr)}}
 </style>
 </head>
@@ -76,6 +80,11 @@ h2{margin:0 0 12px;font-size:20px}
       <button class="btn dark" onclick="App.show('home')">처음으로</button>
     </div>
   </div>
+  <div class="codebox">
+    <span class="label">경기 코드</span>
+    <span class="code" id="centerCode">------</span>
+    <button id="btnNewCode" class="btn dark" onclick="App.newCode()">새 코드 만들기</button>
+  </div>
   <div class="grid" id="centerGrid"></div>
   <p class="note">※ 1단계: 아직 태블릿끼리 연결되지 않았습니다. 카메라 상태는 모두 "연결 안 됨"이 정상입니다. (9단계에서 연결)</p>
   <div class="devbox">
@@ -89,6 +98,12 @@ h2{margin:0 0 12px;font-size:20px}
   <div class="top">
     <h1>촬영용 태블릿</h1>
     <button class="btn dark" onclick="App.show('home')">처음으로</button>
+  </div>
+  <h2>경기 코드 입력</h2>
+  <div class="row" style="margin-bottom:18px">
+    <input id="codeInput" class="codeinput" maxlength="6" placeholder="6자리" autocapitalize="characters" autocomplete="off">
+    <button class="btn" onclick="App.submitCode()">코드 입력</button>
+    <span id="codeState" class="badge off">코드 없음</span>
   </div>
   <h2>담당 베이스 선택</h2>
   <div class="basepick" id="basePick"></div>
@@ -128,6 +143,8 @@ const App = {
   state: {
     gameRunning: false,
     myBase: "1B",
+    gameCode: "",   // 중앙 심판이 만든 코드
+    myCode: "",     // 이 촬영 태블릿에 입력한 코드
     bases: {
       "1B":{connected:false, verdict:"NONE"},
       "2B":{connected:false, verdict:"NONE"},
@@ -171,6 +188,26 @@ const App = {
     this.render();
   },
 
+  // 경기 코드: 헷갈리기 쉬운 글자(0, O, 1, I)는 뺐습니다.
+  newCode(){
+    const chars = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
+    let c = "";
+    for(let i=0;i<6;i++) c += chars[Math.floor(Math.random()*chars.length)];
+    this.state.gameCode = c;
+    this.render();
+  },
+
+  submitCode(){
+    const input = document.getElementById("codeInput");
+    const c = input.value.trim().toUpperCase();
+    if(!/^[A-Z0-9]{6}$/.test(c)){
+      alert("경기 코드는 영어 글자와 숫자 6자리입니다. 다시 입력해 주세요.");
+      return;
+    }
+    this.state.myCode = c;
+    this.render();
+  },
+
   selectBase(id){
     this.state.myBase = id;
     this.render();
@@ -195,6 +232,12 @@ const App = {
     document.getElementById("btnStart").disabled = s.gameRunning;
     document.getElementById("btnEnd").disabled = !s.gameRunning;
 
+    document.getElementById("centerCode").textContent = s.gameCode || "------";
+    document.getElementById("btnNewCode").disabled = s.gameRunning;
+    const cs = document.getElementById("codeState");
+    cs.textContent = s.myCode ? "코드 저장됨: "+s.myCode : "코드 없음";
+    cs.className = "badge " + (s.myCode ? "on" : "off");
+
     // 촬영 화면
     document.getElementById("basePick").innerHTML = BASES.map(b=>
       `<button class="btn ${s.myBase===b.id?"sel":""}" onclick="App.selectBase('${b.id}')">${b.label}</button>`).join("");
@@ -218,7 +261,7 @@ document.getElementById("centerDev").innerHTML =
    <button class="btn dark" onclick="testDisconnect()">모두 연결 끊기</button><br>` + devHtml("testCenter");
 document.getElementById("camDev").innerHTML = devHtml("testCam");
 
-App.render();
+App.newCode();
 </script>
 </body>
 </html>
