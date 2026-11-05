@@ -57,9 +57,9 @@ h2{margin:0 0 12px;font-size:20px}
 </style>
 </head>
 <body>
-
+ 
 <!-- ===== 2. 화면 모양 (HTML) ===== -->
-
+ 
 <!-- 시작 화면: 역할 고르기 -->
 <section id="screen-home" class="screen active">
   <h1>AI T-BALL UMPIRE</h1>
@@ -69,7 +69,7 @@ h2{margin:0 0 12px;font-size:20px}
     <button class="btn dark" onclick="App.show('camera')">촬영용 화면</button>
   </div>
 </section>
-
+ 
 <!-- 중앙 심판 화면 -->
 <section id="screen-center" class="screen">
   <div class="top">
@@ -92,7 +92,7 @@ h2{margin:0 0 12px;font-size:20px}
     <span id="centerDev"></span>
   </div>
 </section>
-
+ 
 <!-- 촬영용 태블릿 화면 -->
 <section id="screen-camera" class="screen">
   <div class="top">
@@ -124,7 +124,7 @@ h2{margin:0 0 12px;font-size:20px}
     <span id="camDev"></span>
   </div>
 </section>
-
+ 
 <script>
 /* ===== 3. 동작 (JavaScript) =====
    나중에 AI 기능을 붙일 때는 아래 App.setVerdict(베이스, 판정) 만 불러주면 됩니다.
@@ -137,7 +137,7 @@ const BASES = [
   {id:"HOME", label:"홈"}
 ];
 const VERDICT_TEXT = {SAFE:"SAFE", OUT:"OUT", UNKNOWN:"판정 불가", BUSY:"분석 중", NONE:"대기"};
-
+ 
 const App = {
   // 앱이 기억하는 정보. 지금은 이 화면 안에서만 저장됩니다.
   state: {
@@ -152,24 +152,24 @@ const App = {
       "HOME":{connected:false, verdict:"NONE"}
     }
   },
-
+ 
   show(name){
     document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
     document.getElementById("screen-"+name).classList.add("active");
   },
-
+ 
   // 나중에 AI가 판정을 내리면 이 함수를 부르면 됩니다.
   setVerdict(baseId, verdict){
     this.state.bases[baseId].verdict = verdict;
     this.render();
   },
-
+ 
   // 나중에 카메라 연결이 되면 이 함수로 상태를 바꿉니다.
   setConnected(baseId, isConnected){
     this.state.bases[baseId].connected = isConnected;
     this.render();
   },
-
+ 
   startGame(){
     // 규칙: 네 카메라가 모두 연결되어야 시작 (9단계 전까지는 테스트 버튼으로 확인)
     const notReady = BASES.filter(b=>!this.state.bases[b.id].connected).map(b=>b.label);
@@ -180,14 +180,14 @@ const App = {
     this.state.gameRunning = true;
     this.render();
   },
-
+ 
   endGame(){
     if(!confirm("경기를 종료할까요?")) return;
     this.state.gameRunning = false;
     BASES.forEach(b=>this.state.bases[b.id].verdict="NONE");
     this.render();
   },
-
+ 
   // 경기 코드: 헷갈리기 쉬운 글자(0, O, 1, I)는 뺐습니다.
   newCode(){
     const chars = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
@@ -196,7 +196,7 @@ const App = {
     this.state.gameCode = c;
     this.render();
   },
-
+ 
   submitCode(){
     const input = document.getElementById("codeInput");
     const c = input.value.trim().toUpperCase();
@@ -207,12 +207,12 @@ const App = {
     this.state.myCode = c;
     this.render();
   },
-
+ 
   selectBase(id){
     this.state.myBase = id;
     this.render();
   },
-
+ 
   render(){
     const s = this.state;
     // 중앙 화면
@@ -231,13 +231,13 @@ const App = {
     gs.className = "badge " + (s.gameRunning ? "on" : "off");
     document.getElementById("btnStart").disabled = s.gameRunning;
     document.getElementById("btnEnd").disabled = !s.gameRunning;
-
+ 
     document.getElementById("centerCode").textContent = s.gameCode || "------";
     document.getElementById("btnNewCode").disabled = s.gameRunning;
     const cs = document.getElementById("codeState");
     cs.textContent = s.myCode ? "코드 저장됨: "+s.myCode : "코드 없음";
     cs.className = "badge " + (s.myCode ? "on" : "off");
-
+ 
     // 촬영 화면
     document.getElementById("basePick").innerHTML = BASES.map(b=>
       `<button class="btn ${s.myBase===b.id?"sel":""}" onclick="App.selectBase('${b.id}')">${b.label}</button>`).join("");
@@ -248,7 +248,7 @@ const App = {
     document.getElementById("stNet").textContent = mine.connected ? "연결됨" : "연결 안 됨";
   }
 };
-
+ 
 // 테스트 버튼 만들기
 const devHtml = (fn)=>["SAFE","OUT","UNKNOWN","BUSY","NONE"].map(v=>
   `<button class="btn dark" onclick="${fn}('${v}')">${VERDICT_TEXT[v]}</button>`).join("");
@@ -260,8 +260,9 @@ document.getElementById("centerDev").innerHTML =
   `<button class="btn dark" onclick="testConnect()">카메라 4대 연결된 척하기</button>
    <button class="btn dark" onclick="testDisconnect()">모두 연결 끊기</button><br>` + devHtml("testCenter");
 document.getElementById("camDev").innerHTML = devHtml("testCam");
-
+ 
 App.newCode();
 </script>
 </body>
 </html>
+ 
