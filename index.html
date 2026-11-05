@@ -5,62 +5,46 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>AI T-BALL UMPIRE</title>
 <style>
-/* ===== 1. 디자인 (색깔과 모양) ===== */
-:root{
-  --safe:#1fb954; --out:#e5283b; --unknown:#f5c400; --busy:#2f80ed;
-  --bg:#000; --panel:#141414; --line:#333; --text:#fff; --muted:#999;
-}
+:root{--safe:#1fb954;--out:#e5283b;--unknown:#f5c400;--busy:#2f80ed;--panel:#141414;--line:#333;--muted:#999}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,"Apple SD Gothic Neo","Malgun Gothic",sans-serif}
-.screen{display:none;min-height:100vh;padding:20px}
-.screen.active{display:block}
-h1{margin:0 0 6px;font-size:28px;letter-spacing:1px}
-h2{margin:0 0 12px;font-size:20px}
-.sub{color:var(--muted);margin:0 0 24px}
-.btn{font-size:22px;font-weight:700;padding:18px 28px;border-radius:14px;border:2px solid #fff;background:#fff;color:#000;cursor:pointer;min-height:64px}
-.btn.dark{background:#000;color:#fff}
-.btn.start{background:var(--safe);border-color:var(--safe);color:#000}
-.btn.stop{background:var(--out);border-color:var(--out);color:#fff}
+body{margin:0;background:#000;color:#fff;font-family:system-ui,"Apple SD Gothic Neo","Malgun Gothic",sans-serif}
+.screen{display:none;min-height:100vh;padding:20px}.screen.active{display:block}
+h1{margin:0 0 6px;font-size:28px}h2{margin:0 0 12px;font-size:20px}
+.sub,.note{color:var(--muted)}.note{font-size:15px;margin-top:10px}
+.btn{font-size:20px;font-weight:700;padding:16px 24px;border-radius:14px;border:2px solid #fff;background:#fff;color:#000;cursor:pointer;min-height:60px}
+.btn.dark{background:#000;color:#fff}.btn.start{background:var(--safe);border-color:var(--safe);color:#000}
+.btn.stop{background:var(--out);border-color:var(--out);color:#fff}.btn.sm{font-size:17px;padding:10px 14px;min-height:48px}
 .btn:disabled{opacity:.35;cursor:not-allowed}
-.row{display:flex;gap:14px;flex-wrap:wrap;align-items:center}
-.top{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:18px;flex-wrap:wrap}
+.row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+.top{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap}
 .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
-.card{background:var(--panel);border:2px solid var(--line);border-radius:18px;padding:18px}
-.card .name{font-size:24px;font-weight:800}
-.badge{display:inline-block;padding:6px 12px;border-radius:999px;font-size:16px;font-weight:700;background:#333}
+.card{background:var(--panel);border:2px solid var(--line);border-radius:18px;padding:16px}
+.name{font-size:24px;font-weight:800}
+.badge{display:inline-block;padding:6px 12px;border-radius:999px;font-size:16px;font-weight:700;background:#444;color:#ccc}
 .badge.on{background:var(--safe);color:#000}
-.badge.off{background:#444;color:#ccc}
-/* 판정 표시 영역 */
-.verdict{margin-top:14px;border-radius:14px;text-align:center;font-weight:900;padding:26px 8px;font-size:44px;background:#222;color:#777;letter-spacing:2px}
-.verdict.SAFE{background:var(--safe);color:#000}
-.verdict.OUT{background:var(--out);color:#fff}
-.verdict.UNKNOWN{background:var(--unknown);color:#000;font-size:34px}
-.verdict.BUSY{background:var(--busy);color:#fff;font-size:34px}
-.verdict.big{font-size:90px;padding:50px 8px}
-.verdict.big.UNKNOWN,.verdict.big.BUSY{font-size:64px}
-/* 카메라 화면 */
-.basepick{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}
-.basepick .btn{font-size:24px}
-.basepick .btn.sel{background:#fff;color:#000}
+.verdict{margin-top:12px;border-radius:14px;text-align:center;font-weight:900;padding:22px 8px;font-size:44px;background:#222;color:#777}
+.verdict.SAFE{background:var(--safe);color:#000}.verdict.OUT{background:var(--out);color:#fff}
+.verdict.TOUCH{background:#138a43;font-size:34px;color:#fff}
+.verdict.UNKNOWN{background:var(--unknown);color:#000;font-size:34px}.verdict.BUSY{background:var(--busy);color:#fff;font-size:34px}
+.verdict.big{font-size:80px;padding:40px 8px}.verdict.big.TOUCH,.verdict.big.UNKNOWN,.verdict.big.BUSY{font-size:56px}
+.reason{margin-top:8px;color:#ccc;font-size:16px;min-height:22px}
+.final{margin-top:8px;font-size:20px;font-weight:800}
+.codebox{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:16px;background:var(--panel);border:2px solid var(--line);border-radius:18px;padding:12px 18px}
+.code{font-size:42px;font-weight:900;letter-spacing:8px;font-family:ui-monospace,monospace}
+.codeinput{font-size:28px;font-weight:800;letter-spacing:6px;text-transform:uppercase;text-align:center;width:220px;padding:10px;border-radius:14px;border:2px solid #fff;background:#000;color:#fff;min-height:60px}
+.basepick{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
 .basepick .btn:not(.sel){background:#000;color:#fff}
-.video{background:#0b0b0b;border:2px dashed var(--line);border-radius:18px;aspect-ratio:16/9;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:20px;text-align:center;padding:10px}
-.statuslist{margin:14px 0;display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.vwrap{position:relative;background:#0b0b0b;border:2px dashed var(--line);border-radius:18px;aspect-ratio:16/9;overflow:hidden;color:var(--muted)}
+.vwrap video,.vwrap canvas{position:absolute;inset:0;width:100%;height:100%;object-fit:fill}
+.statuslist{margin:12px 0;display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
 .statuslist div{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px;font-size:17px}
-.devbox{margin-top:26px;border:1px dashed #555;border-radius:14px;padding:14px;color:var(--muted);font-size:15px}
-.devbox .btn{font-size:16px;padding:10px 14px;min-height:44px;margin:4px 4px 0 0}
-.note{color:var(--muted);font-size:15px;margin-top:10px}
-.codebox{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:18px;background:var(--panel);border:2px solid var(--line);border-radius:18px;padding:14px 18px}
-.codebox .label{color:var(--muted);font-size:18px}
-.codebox .code{font-size:44px;font-weight:900;letter-spacing:8px;font-family:ui-monospace,monospace}
-.codeinput{font-size:30px;font-weight:800;letter-spacing:6px;text-transform:uppercase;text-align:center;width:240px;padding:12px;border-radius:14px;border:2px solid #fff;background:#000;color:#fff;min-height:64px}
+#hint{margin:8px 0;color:var(--unknown);font-size:18px;min-height:24px}
 @media(max-width:700px){.grid{grid-template-columns:1fr}.basepick{grid-template-columns:repeat(2,1fr)}}
 </style>
+<script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"></script>
 </head>
 <body>
- 
-<!-- ===== 2. 화면 모양 (HTML) ===== -->
- 
-<!-- 시작 화면: 역할 고르기 -->
+
 <section id="screen-home" class="screen active">
   <h1>AI T-BALL UMPIRE</h1>
   <p class="sub">이 태블릿의 역할을 선택하세요.</p>
@@ -69,11 +53,10 @@ h2{margin:0 0 12px;font-size:20px}
     <button class="btn dark" onclick="App.show('camera')">촬영용 화면</button>
   </div>
 </section>
- 
-<!-- 중앙 심판 화면 -->
+
 <section id="screen-center" class="screen">
   <div class="top">
-    <div><h1>중앙 심판</h1><span id="gameState" class="badge off">경기 대기 중</span></div>
+    <div><h1>중앙 심판</h1><span id="gameState" class="badge">경기 대기 중</span></div>
     <div class="row">
       <button id="btnStart" class="btn start" onclick="App.startGame()">경기 시작</button>
       <button id="btnEnd" class="btn stop" onclick="App.endGame()" disabled>경기 종료</button>
@@ -81,188 +64,258 @@ h2{margin:0 0 12px;font-size:20px}
     </div>
   </div>
   <div class="codebox">
-    <span class="label">경기 코드</span>
-    <span class="code" id="centerCode">------</span>
-    <button id="btnNewCode" class="btn dark" onclick="App.newCode()">새 코드 만들기</button>
+    <span class="sub">경기 코드</span><span class="code" id="centerCode">------</span>
+    <button id="btnNewCode" class="btn dark sm" onclick="App.newCode()">새 코드 만들기</button>
+    <span id="netInfo" class="badge">통신 준비 중</span>
   </div>
   <div class="grid" id="centerGrid"></div>
-  <p class="note">※ 1단계: 아직 태블릿끼리 연결되지 않았습니다. 카메라 상태는 모두 "연결 안 됨"이 정상입니다. (9단계에서 연결)</p>
-  <div class="devbox">
-    🛠 테스트용 버튼 (화면 색깔 확인용, 실제 AI 판정이 아닙니다)<br>
-    <span id="centerDev"></span>
-  </div>
+  <p class="note" id="logInfo"></p>
 </section>
- 
-<!-- 촬영용 태블릿 화면 -->
+
 <section id="screen-camera" class="screen">
-  <div class="top">
-    <h1>촬영용 태블릿</h1>
-    <button class="btn dark" onclick="App.show('home')">처음으로</button>
-  </div>
+  <div class="top"><h1>촬영용 태블릿</h1><button class="btn dark" onclick="App.show('home')">처음으로</button></div>
   <h2>경기 코드 입력</h2>
-  <div class="row" style="margin-bottom:18px">
+  <div class="row" style="margin-bottom:16px">
     <input id="codeInput" class="codeinput" maxlength="6" placeholder="6자리" autocapitalize="characters" autocomplete="off">
     <button class="btn" onclick="App.submitCode()">코드 입력</button>
-    <span id="codeState" class="badge off">코드 없음</span>
+    <span id="codeState" class="badge">코드 없음</span>
   </div>
   <h2>담당 베이스 선택</h2>
   <div class="basepick" id="basePick"></div>
-  <div class="video" id="videoBox">카메라 화면이 나올 자리입니다<br>(3단계에서 연결)</div>
-  <div class="row" style="margin:14px 0">
-    <button class="btn start" disabled>카메라 시작</button>
-    <button class="btn stop" disabled>카메라 종료</button>
+  <div class="vwrap"><video id="video" playsinline muted></video><canvas id="cv"></canvas></div>
+  <div id="hint"></div>
+  <div class="row" style="margin-bottom:12px">
+    <button id="btnCamOn" class="btn start" onclick="App.startCamera()">카메라 시작</button>
+    <button id="btnCamOff" class="btn stop" onclick="App.stopCamera()" disabled>카메라 종료</button>
+    <button id="btnSetBase" class="btn" onclick="App.setBasePos()">베이스 위치 설정</button>
+    <button class="btn dark" onclick="App.flag()">규칙 위반 의심 신고</button>
   </div>
   <div class="statuslist">
     <div>카메라: <b id="stCam">꺼짐</b></div>
     <div>AI 인식: <b id="stAi">준비 안 됨</b></div>
-    <div>주자 인식: <b id="stRunner">준비 안 됨</b></div>
+    <div>주자 인식: <b id="stRunner">-</b></div>
     <div>네트워크: <b id="stNet">연결 안 됨</b></div>
+    <div>경기: <b id="stGame">대기</b></div>
+    <div>베이스 위치: <b id="stPoly">설정 안 됨</b></div>
   </div>
   <div id="camVerdict" class="verdict big">대기</div>
-  <div class="devbox">
-    🛠 테스트용 버튼 (화면 색깔 확인용, 실제 AI 판정이 아닙니다)<br>
-    <span id="camDev"></span>
-  </div>
+  <div class="reason" id="camReason"></div>
 </section>
- 
-<script>
-/* ===== 3. 동작 (JavaScript) =====
-   나중에 AI 기능을 붙일 때는 아래 App.setVerdict(베이스, 판정) 만 불러주면 됩니다.
-   판정 값: "SAFE", "OUT", "UNKNOWN"(판정 불가), "BUSY"(분석 중), "NONE"(대기)
-*/
-const BASES = [
-  {id:"1B", label:"1루"},
-  {id:"2B", label:"2루"},
-  {id:"3B", label:"3루"},
-  {id:"HOME", label:"홈"}
-];
-const VERDICT_TEXT = {SAFE:"SAFE", OUT:"OUT", UNKNOWN:"판정 불가", BUSY:"분석 중", NONE:"대기"};
- 
-const App = {
-  // 앱이 기억하는 정보. 지금은 이 화면 안에서만 저장됩니다.
-  state: {
-    gameRunning: false,
-    myBase: "1B",
-    gameCode: "",   // 중앙 심판이 만든 코드
-    myCode: "",     // 이 촬영 태블릿에 입력한 코드
-    bases: {
-      "1B":{connected:false, verdict:"NONE"},
-      "2B":{connected:false, verdict:"NONE"},
-      "3B":{connected:false, verdict:"NONE"},
-      "HOME":{connected:false, verdict:"NONE"}
-    }
-  },
- 
-  show(name){
-    document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
-    document.getElementById("screen-"+name).classList.add("active");
-  },
- 
-  // 나중에 AI가 판정을 내리면 이 함수를 부르면 됩니다.
-  setVerdict(baseId, verdict){
-    this.state.bases[baseId].verdict = verdict;
-    this.render();
-  },
- 
-  // 나중에 카메라 연결이 되면 이 함수로 상태를 바꿉니다.
-  setConnected(baseId, isConnected){
-    this.state.bases[baseId].connected = isConnected;
-    this.render();
-  },
- 
-  startGame(){
-    // 규칙: 네 카메라가 모두 연결되어야 시작 (9단계 전까지는 테스트 버튼으로 확인)
-    const notReady = BASES.filter(b=>!this.state.bases[b.id].connected).map(b=>b.label);
-    if(notReady.length){
-      alert("아직 연결되지 않은 카메라: "+notReady.join(", ")+"\n모든 카메라가 연결되어야 경기를 시작할 수 있습니다.");
-      return;
-    }
-    this.state.gameRunning = true;
-    this.render();
-  },
- 
-  endGame(){
-    if(!confirm("경기를 종료할까요?")) return;
-    this.state.gameRunning = false;
-    BASES.forEach(b=>this.state.bases[b.id].verdict="NONE");
-    this.render();
-  },
- 
-  // 경기 코드: 헷갈리기 쉬운 글자(0, O, 1, I)는 뺐습니다.
+
+<script type="module">
+/* ===== 기본 정보 ===== */
+const BASES=[{id:"1B",label:"1루"},{id:"2B",label:"2루"},{id:"3B",label:"3루"},{id:"HOME",label:"홈"}];
+const VT={SAFE:"SAFE",OUT:"OUT",TOUCH:"접촉 확인",UNKNOWN:"판정 불가",BUSY:"분석 중",NONE:"대기"};
+const $=id=>document.getElementById(id);
+const store={get(k,d){try{return localStorage.getItem(k)??d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
+const MP="https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14";
+const MODEL="https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task";
+
+const S={gameRunning:false,gameCode:"",myCode:store.get("code",""),myBase:store.get("base","1B"),bases:{},log:[],
+  cam:{on:false,ai:"준비 안 됨",runners:"-",net:"연결 안 됨",poly:null,setting:false,verdict:"NONE",reason:"카메라를 시작하세요"}};
+BASES.forEach(b=>S.bases[b.id]={connected:false,verdict:"NONE",reason:"",final:"",flags:0,lastSeen:0,conn:null});
+const loadPoly=()=>{try{S.cam.poly=JSON.parse(store.get("poly-"+S.myBase,"null"))}catch(e){S.cam.poly=null}};
+
+/* ===== 중앙 태블릿 통신 (WebRTC, PeerJS 사용) ===== */
+let cPeer=null;
+function openCenterPeer(){
+  if(cPeer)cPeer.destroy();
+  BASES.forEach(b=>{S.bases[b.id].conn=null;S.bases[b.id].connected=false});
+  $("netInfo").textContent="통신 준비 중...";$("netInfo").className="badge";
+  cPeer=new Peer("tball-"+S.gameCode);
+  cPeer.on("open",()=>{$("netInfo").textContent="통신 준비됨";$("netInfo").className="badge on"});
+  cPeer.on("connection",conn=>{
+    conn.on("data",d=>fromCam(conn,d));
+    conn.on("close",()=>{BASES.forEach(b=>{const x=S.bases[b.id];if(x.conn===conn){x.conn=null;x.connected=false;x.verdict="UNKNOWN";x.reason="카메라 연결 끊김"}});App.render()});
+  });
+  cPeer.on("error",e=>{if(e.type==="unavailable-id")App.newCode();else{$("netInfo").textContent="통신 오류("+e.type+") 인터넷 확인";$("netInfo").className="badge"}});
+}
+function fromCam(conn,d){
+  const b=S.bases[d.base];if(!b)return;
+  b.conn=conn;b.connected=true;b.lastSeen=Date.now();
+  if(d.t==="status"){b.verdict=d.v;b.reason=d.reason}
+  if(d.t==="flag"){b.flags++;S.log.push({time:new Date().toLocaleString(),base:d.base,type:"규칙 위반 의심"})}
+  App.render();
+}
+const broadcast=m=>BASES.forEach(b=>{const c=S.bases[b.id].conn;if(c&&c.open)c.send(m)});
+setInterval(()=>{BASES.forEach(b=>{const x=S.bases[b.id];
+  if(x.connected&&Date.now()-x.lastSeen>6000){x.connected=false;x.verdict="UNKNOWN";x.reason="카메라 연결 끊김";App.render()}})},1000);
+
+/* ===== 촬영 태블릿 통신 ===== */
+let kPeer=null,kConn=null,hb=null,retryT=null;
+function connectCenter(){
+  clearInterval(hb);clearTimeout(retryT);if(kPeer)kPeer.destroy();kPeer=null;kConn=null;
+  if(!S.myCode)return;
+  S.cam.net="연결 중...";App.render();
+  kPeer=new Peer();
+  kPeer.on("open",()=>{
+    kConn=kPeer.connect("tball-"+S.myCode,{reliable:true});
+    kConn.on("open",()=>{S.cam.net="연결됨";sendStatus();App.render()});
+    kConn.on("data",d=>{if(d.t==="start")S.gameRunning=true;if(d.t==="end")S.gameRunning=false;App.render()});
+    kConn.on("close",()=>{S.cam.net="끊김 - 다시 연결 중";App.render();retry()});
+  });
+  kPeer.on("error",e=>{S.cam.net=e.type==="peer-unavailable"?"중앙 태블릿을 못 찾음 (코드 확인)":"연결 실패("+e.type+")";App.render();retry()});
+  hb=setInterval(sendStatus,2000);
+}
+const retry=()=>{clearTimeout(retryT);retryT=setTimeout(connectCenter,5000)};
+const sendStatus=()=>{if(kConn&&kConn.open)kConn.send({t:"status",base:S.myBase,v:S.cam.verdict,reason:S.cam.reason})};
+function setCam(v,reason){
+  if(S.cam.verdict===v&&S.cam.reason===reason)return;
+  S.cam.verdict=v;S.cam.reason=reason;sendStatus();App.render();
+}
+
+/* ===== 카메라 + AI (MediaPipe 자세 인식) ===== */
+let lm=null,stream=null,tracks=[],nextId=1,holdUntil=0,noFeet=0,lastT=0;
+const cv=$("cv"),video=$("video");
+async function loadAI(){
+  if(lm)return true;
+  S.cam.ai="불러오는 중... (인터넷 필요)";App.render();
+  try{
+    const V=await import(MP+"/vision_bundle.mjs");
+    const fs=await V.FilesetResolver.forVisionTasks(MP+"/wasm");
+    const mk=d=>V.PoseLandmarker.createFromOptions(fs,{baseOptions:{modelAssetPath:MODEL,delegate:d},runningMode:"VIDEO",numPoses:4});
+    try{lm=await mk("GPU")}catch(e){lm=await mk("CPU")}
+    S.cam.ai="작동 중";App.render();return true;
+  }catch(e){S.cam.ai="오류: 인터넷 연결 확인";App.render();return false}
+}
+function loop(){
+  if(!S.cam.on||!lm)return;
+  requestAnimationFrame(loop);
+  const now=performance.now();
+  if(now-lastT<66||video.readyState<2)return;
+  lastT=now;
+  if(cv.width!==video.videoWidth){cv.width=video.videoWidth;cv.height=video.videoHeight}
+  const ctx=cv.getContext("2d");ctx.clearRect(0,0,cv.width,cv.height);
+  analyze(lm.detectForVideo(video,now).landmarks||[],ctx);
+}
+const inPoly=(p,poly)=>{let r=false;for(let i=0,j=poly.length-1;i<poly.length;j=i++){
+  const a=poly[i],b=poly[j];if((a.y>p.y)!==(b.y>p.y)&&p.x<(b.x-a.x)*(p.y-a.y)/(b.y-a.y)+a.x)r=!r}return r};
+function analyze(people,ctx){
+  const W=cv.width,H=cv.height,poly=S.cam.poly;
+  ctx.lineWidth=4;ctx.strokeStyle="#f5c400";
+  if(poly){ctx.beginPath();poly.forEach((p,i)=>i?ctx.lineTo(p.x*W,p.y*H):ctx.moveTo(p.x*W,p.y*H));ctx.closePath();ctx.stroke()}
+  // 사람마다 번호를 붙여 따라가기 (가까운 위치끼리 같은 사람으로 판단)
+  const dets=people.map(l=>({l,cx:(l[23].x+l[24].x)/2,cy:(l[23].y+l[24].y)/2}));
+  tracks.forEach(t=>t.seen=false);
+  dets.forEach(d=>{
+    let best=null,bd=0.15;
+    tracks.forEach(t=>{if(t.seen)return;const k=Math.hypot(t.cx-d.cx,t.cy-d.cy);if(k<bd){bd=k;best=t}});
+    if(!best){best={id:nextId++,hit:0,miss:0};tracks.push(best)}
+    Object.assign(best,{cx:d.cx,cy:d.cy,seen:true,miss:0});d.t=best;
+  });
+  tracks.forEach(t=>{if(!t.seen)t.miss++});
+  tracks=tracks.filter(t=>t.miss<30);
+  // 발이 베이스 안에 있는지 확인
+  const c=poly?{x:poly.reduce((s,p)=>s+p.x,0)/4,y:poly.reduce((s,p)=>s+p.y,0)/4}:null;
+  let near=false,hidden=false,touch=false;
+  dets.forEach(d=>{
+    const feet=[29,30,31,32].map(i=>d.l[i]).filter(p=>p&&p.visibility>0.5);
+    d.t.hit=poly&&feet.some(p=>inPoly(p,poly))?d.t.hit+1:0;
+    if(c&&Math.hypot(d.cx-c.x,d.cy-c.y)<0.3){near=true;if(!feet.length)hidden=true}
+    if(d.t.hit>=3)touch=true;
+    ctx.fillStyle="#2f80ed";d.l.forEach(p=>{ctx.beginPath();ctx.arc(p.x*W,p.y*H,4,0,7);ctx.fill()});
+    ctx.fillStyle="#1fb954";feet.forEach(p=>{ctx.beginPath();ctx.arc(p.x*W,p.y*H,8,0,7);ctx.fill()});
+    ctx.fillStyle="#fff";ctx.font="bold 28px sans-serif";ctx.fillText("주자 "+d.t.id,d.cx*W-30,d.cy*H);
+  });
+  const rn=dets.length?dets.length+"명 인식":"없음";
+  if(rn!==S.cam.runners){S.cam.runners=rn;App.render()}
+  if(!poly)return setCam("NONE","베이스 위치를 먼저 설정하세요");
+  noFeet=near&&hidden?noFeet+1:0;
+  const now=Date.now();
+  if(touch){holdUntil=now+3000;return setCam("TOUCH","발이 베이스 안에 3프레임 이상 보임 (화면 2D 기준)")}
+  if(now<holdUntil)return;
+  if(noFeet>45){holdUntil=now+3000;return setCam("UNKNOWN","베이스 근처 선수의 발이 보이지 않음 - 자동 재분석 중")}
+  setCam(near?"BUSY":"NONE",near?"주자가 베이스에 접근 중":dets.length?"베이스 주변 주자 없음":"주자 없음");
+}
+cv.addEventListener("click",e=>{
+  if(!Array.isArray(S.cam.setting))return;
+  const r=cv.getBoundingClientRect();
+  S.cam.setting.push({x:(e.clientX-r.left)/r.width,y:(e.clientY-r.top)/r.height});
+  if(S.cam.setting.length===4){S.cam.poly=S.cam.setting;store.set("poly-"+S.myBase,JSON.stringify(S.cam.poly));S.cam.setting=false}
+  App.render();
+});
+
+/* ===== 버튼 동작 ===== */
+const App=window.App={
+  show(n){document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));$("screen-"+n).classList.add("active");
+    if(n==="center"&&!S.gameCode)this.newCode();
+    if(n==="camera"){loadPoly();if(S.myCode&&!kPeer)connectCenter();$("codeInput").value=S.myCode}this.render()},
   newCode(){
-    const chars = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
-    let c = "";
-    for(let i=0;i<6;i++) c += chars[Math.floor(Math.random()*chars.length)];
-    this.state.gameCode = c;
-    this.render();
+    const ch="ABCDEFGHJKMNPQRSTUVWXYZ23456789";let c="";
+    for(let i=0;i<6;i++)c+=ch[Math.floor(Math.random()*ch.length)];
+    S.gameCode=c;openCenterPeer();this.render();
   },
- 
   submitCode(){
-    const input = document.getElementById("codeInput");
-    const c = input.value.trim().toUpperCase();
-    if(!/^[A-Z0-9]{6}$/.test(c)){
-      alert("경기 코드는 영어 글자와 숫자 6자리입니다. 다시 입력해 주세요.");
-      return;
-    }
-    this.state.myCode = c;
+    const c=$("codeInput").value.trim().toUpperCase();
+    if(!/^[A-Z0-9]{6}$/.test(c))return alert("경기 코드는 영어 글자와 숫자 6자리입니다.");
+    S.myCode=c;store.set("code",c);connectCenter();
+  },
+  selectBase(id){S.myBase=id;store.set("base",id);loadPoly();S.cam.setting=false;tracks=[];sendStatus();this.render()},
+  setBasePos(){
+    if(!S.cam.on)return alert("먼저 카메라를 시작하세요.");
+    S.cam.setting=[];this.render();
+  },
+  async startCamera(){
+    try{stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:"environment",width:{ideal:1280},height:{ideal:720}},audio:false})}
+    catch(e){return alert("카메라를 켤 수 없습니다. 브라우저의 카메라 허용을 눌러 주세요.")}
+    video.srcObject=stream;await video.play();S.cam.on=true;this.render();
+    if(await loadAI())loop();
+  },
+  stopCamera(){
+    if(stream)stream.getTracks().forEach(t=>t.stop());
+    video.srcObject=null;S.cam.on=false;S.cam.runners="-";
+    cv.getContext("2d").clearRect(0,0,cv.width,cv.height);
+    setCam("UNKNOWN","카메라가 꺼짐");this.render();
+  },
+  flag(){
+    if(!kConn||!kConn.open)return alert("중앙 태블릿과 연결된 뒤에 신고할 수 있습니다.");
+    kConn.send({t:"flag",base:S.myBase});alert("중앙 심판에게 전달했습니다.");
+  },
+  startGame(){
+    const no=BASES.filter(b=>!S.bases[b.id].connected).map(b=>b.label);
+    if(no.length)return alert("아직 연결되지 않은 카메라: "+no.join(", "));
+    BASES.forEach(b=>S.bases[b.id].final="");
+    S.gameRunning=true;broadcast({t:"start"});this.render();
+  },
+  endGame(){
+    if(!confirm("경기를 종료할까요?"))return;
+    S.gameRunning=false;broadcast({t:"end"});this.render();
+  },
+  decide(id,f){
+    S.bases[id].final=f;
+    S.log.push({time:new Date().toLocaleString(),base:id,type:"판정",ai:VT[S.bases[id].verdict],final:f});
     this.render();
   },
- 
-  selectBase(id){
-    this.state.myBase = id;
-    this.render();
-  },
- 
   render(){
-    const s = this.state;
-    // 중앙 화면
-    document.getElementById("centerGrid").innerHTML = BASES.map(b=>{
-      const d = s.bases[b.id];
-      return `<div class="card">
-        <div class="row" style="justify-content:space-between">
-          <span class="name">${b.label}</span>
-          <span class="badge ${d.connected?"on":"off"}">${d.connected?"연결됨":"연결 안 됨"}</span>
-        </div>
-        <div class="verdict ${d.verdict}">${VERDICT_TEXT[d.verdict]}</div>
-      </div>`;
-    }).join("");
-    const gs = document.getElementById("gameState");
-    gs.textContent = s.gameRunning ? "경기 진행 중" : "경기 대기 중";
-    gs.className = "badge " + (s.gameRunning ? "on" : "off");
-    document.getElementById("btnStart").disabled = s.gameRunning;
-    document.getElementById("btnEnd").disabled = !s.gameRunning;
- 
-    document.getElementById("centerCode").textContent = s.gameCode || "------";
-    document.getElementById("btnNewCode").disabled = s.gameRunning;
-    const cs = document.getElementById("codeState");
-    cs.textContent = s.myCode ? "코드 저장됨: "+s.myCode : "코드 없음";
-    cs.className = "badge " + (s.myCode ? "on" : "off");
- 
-    // 촬영 화면
-    document.getElementById("basePick").innerHTML = BASES.map(b=>
-      `<button class="btn ${s.myBase===b.id?"sel":""}" onclick="App.selectBase('${b.id}')">${b.label}</button>`).join("");
-    const mine = s.bases[s.myBase];
-    const cv = document.getElementById("camVerdict");
-    cv.className = "verdict big " + mine.verdict;
-    cv.textContent = VERDICT_TEXT[mine.verdict];
-    document.getElementById("stNet").textContent = mine.connected ? "연결됨" : "연결 안 됨";
+    $("centerGrid").innerHTML=BASES.map(b=>{const d=S.bases[b.id];return `<div class="card">
+      <div class="row" style="justify-content:space-between"><span class="name">${b.label}</span>
+      <span class="badge ${d.connected?"on":""}">${d.connected?"연결됨":"연결 안 됨"}</span></div>
+      <div class="verdict ${d.verdict}">${VT[d.verdict]}</div>
+      <div class="reason">${d.reason||""}${d.flags?` ⚠ 규칙 위반 의심 ${d.flags}건`:""}</div>
+      <div class="final">${d.final?"최종 판정: "+d.final:"최종 판정 대기"}</div>
+      <div class="row" style="margin-top:8px">
+        <button class="btn sm start" onclick="App.decide('${b.id}','SAFE')">SAFE</button>
+        <button class="btn sm stop" onclick="App.decide('${b.id}','OUT')">OUT</button>
+        <button class="btn sm" style="background:var(--unknown);border-color:var(--unknown)" onclick="App.decide('${b.id}','판정 불가')">판정 불가</button>
+      </div></div>`}).join("");
+    $("centerCode").textContent=S.gameCode||"------";
+    $("gameState").textContent=S.gameRunning?"경기 진행 중":"경기 대기 중";
+    $("gameState").className="badge"+(S.gameRunning?" on":"");
+    $("btnStart").disabled=S.gameRunning;$("btnEnd").disabled=!S.gameRunning;$("btnNewCode").disabled=S.gameRunning;
+    const n=f=>S.log.filter(x=>x.final===f).length;
+    $("logInfo").textContent=`기록 ${S.log.length}건 · SAFE ${n("SAFE")} · OUT ${n("OUT")} · 판정 불가 ${n("판정 불가")} · 위반 의심 ${S.log.filter(x=>x.type==="규칙 위반 의심").length} (아직 화면을 닫으면 사라집니다. 저장은 12단계)`;
+    $("basePick").innerHTML=BASES.map(b=>`<button class="btn ${S.myBase===b.id?"sel":""}" onclick="App.selectBase('${b.id}')">${b.label}</button>`).join("");
+    $("codeState").textContent=S.myCode?"코드: "+S.myCode:"코드 없음";$("codeState").className="badge"+(S.myCode?" on":"");
+    $("stCam").textContent=S.cam.on?"켜짐":"꺼짐";$("stAi").textContent=S.cam.ai;
+    $("stRunner").textContent=S.cam.runners;$("stNet").textContent=S.cam.net;
+    $("stGame").textContent=S.gameRunning?"진행 중":"대기";$("stPoly").textContent=S.cam.poly?"설정됨":"설정 안 됨";
+    $("btnCamOn").disabled=S.cam.on;$("btnCamOff").disabled=!S.cam.on;
+    $("hint").textContent=Array.isArray(S.cam.setting)?`베이스 모서리 4곳을 순서대로 터치하세요 (${S.cam.setting.length}/4)`:"";
+    $("camVerdict").className="verdict big "+S.cam.verdict;$("camVerdict").textContent=VT[S.cam.verdict];
+    $("camReason").textContent=S.cam.reason;
   }
 };
- 
-// 테스트 버튼 만들기
-const devHtml = (fn)=>["SAFE","OUT","UNKNOWN","BUSY","NONE"].map(v=>
-  `<button class="btn dark" onclick="${fn}('${v}')">${VERDICT_TEXT[v]}</button>`).join("");
-window.testCenter = v => BASES.forEach(b=>App.setVerdict(b.id, v));
-window.testCam = v => App.setVerdict(App.state.myBase, v);
-window.testConnect = () => { BASES.forEach(b=>App.setConnected(b.id, true)); };
-window.testDisconnect = () => { BASES.forEach(b=>App.setConnected(b.id, false)); };
-document.getElementById("centerDev").innerHTML =
-  `<button class="btn dark" onclick="testConnect()">카메라 4대 연결된 척하기</button>
-   <button class="btn dark" onclick="testDisconnect()">모두 연결 끊기</button><br>` + devHtml("testCenter");
-document.getElementById("camDev").innerHTML = devHtml("testCam");
- 
-App.newCode();
+loadPoly();App.render();
 </script>
 </body>
 </html>
- 
