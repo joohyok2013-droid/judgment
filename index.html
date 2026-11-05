@@ -2,320 +2,600 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>AI T-BALL UMPIRE</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>AI T-BALL UMPIRE - Easy Base Setup</title>
+<!-- Tailwind CSS for sleek responsive UI -->
+<script src="https://cdn.tailwindcss.com"></script>
+<!-- FontAwesome for Intuitive Icons -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <style>
-:root{--safe:#1fb954;--out:#e5283b;--unknown:#f5c400;--busy:#2f80ed;--panel:#141414;--line:#333;--muted:#999}
-*{box-sizing:border-box}
-body{margin:0;background:#000;color:#fff;font-family:system-ui,"Apple SD Gothic Neo","Malgun Gothic",sans-serif}
-.screen{display:none;min-height:100vh;padding:20px}.screen.active{display:block}
-h1{margin:0 0 6px;font-size:28px}h2{margin:0 0 12px;font-size:20px}
-.sub,.note{color:var(--muted)}.note{font-size:15px;margin-top:10px}
-.btn{font-size:20px;font-weight:700;padding:16px 24px;border-radius:14px;border:2px solid #fff;background:#fff;color:#000;cursor:pointer;min-height:60px}
-.btn.dark{background:#000;color:#fff}.btn.start{background:var(--safe);border-color:var(--safe);color:#000}
-.btn.stop{background:var(--out);border-color:var(--out);color:#fff}.btn.sm{font-size:17px;padding:10px 14px;min-height:48px}
-.btn:disabled{opacity:.35;cursor:not-allowed}
-.row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
-.top{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap}
-.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
-.card{background:var(--panel);border:2px solid var(--line);border-radius:18px;padding:16px}
-.name{font-size:24px;font-weight:800}
-.badge{display:inline-block;padding:6px 12px;border-radius:999px;font-size:16px;font-weight:700;background:#444;color:#ccc}
-.badge.on{background:var(--safe);color:#000}
-.verdict{margin-top:12px;border-radius:14px;text-align:center;font-weight:900;padding:22px 8px;font-size:44px;background:#222;color:#777}
-.verdict.SAFE{background:var(--safe);color:#000}.verdict.OUT{background:var(--out);color:#fff}
-.verdict.TOUCH{background:#138a43;font-size:34px;color:#fff}
-.verdict.UNKNOWN{background:var(--unknown);color:#000;font-size:34px}.verdict.BUSY{background:var(--busy);color:#fff;font-size:34px}
-.verdict.big{font-size:80px;padding:40px 8px}.verdict.big.TOUCH,.verdict.big.UNKNOWN,.verdict.big.BUSY{font-size:56px}
-.reason{margin-top:8px;color:#ccc;font-size:16px;min-height:22px}
-.final{margin-top:8px;font-size:20px;font-weight:800}
-.codebox{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:16px;background:var(--panel);border:2px solid var(--line);border-radius:18px;padding:12px 18px}
-.code{font-size:42px;font-weight:900;letter-spacing:8px;font-family:ui-monospace,monospace}
-.codeinput{font-size:28px;font-weight:800;letter-spacing:6px;text-transform:uppercase;text-align:center;width:220px;padding:10px;border-radius:14px;border:2px solid #fff;background:#000;color:#fff;min-height:60px}
-.basepick{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
-.basepick .btn:not(.sel){background:#000;color:#fff}
-.vwrap{position:relative;background:#0b0b0b;border:2px dashed var(--line);border-radius:18px;aspect-ratio:16/9;overflow:hidden;color:var(--muted)}
-.vwrap video,.vwrap canvas{position:absolute;inset:0;width:100%;height:100%;object-fit:fill}
-.statuslist{margin:12px 0;display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
-.statuslist div{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px;font-size:17px}
-#hint{margin:8px 0;color:var(--unknown);font-size:18px;min-height:24px}
-@media(max-width:700px){.grid{grid-template-columns:1fr}.basepick{grid-template-columns:repeat(2,1fr)}}
-</style>
-<script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"></script>
-</head>
-<body>
-
-<section id="screen-home" class="screen active">
-  <h1>AI T-BALL UMPIRE</h1>
-  <p class="sub">이 태블릿의 역할을 선택하세요.</p>
-  <div class="row">
-    <button class="btn" onclick="App.show('center')">중앙 심판 화면</button>
-    <button class="btn dark" onclick="App.show('camera')">촬영용 화면</button>
-  </div>
-</section>
-
-<section id="screen-center" class="screen">
-  <div class="top">
-    <div><h1>중앙 심판</h1><span id="gameState" class="badge">경기 대기 중</span></div>
-    <div class="row">
-      <button id="btnStart" class="btn start" onclick="App.startGame()">경기 시작</button>
-      <button id="btnEnd" class="btn stop" onclick="App.endGame()" disabled>경기 종료</button>
-      <button class="btn dark" onclick="App.show('home')">처음으로</button>
-    </div>
-  </div>
-  <div class="codebox">
-    <span class="sub">경기 코드</span><span class="code" id="centerCode">------</span>
-    <button id="btnNewCode" class="btn dark sm" onclick="App.newCode()">새 코드 만들기</button>
-    <span id="netInfo" class="badge">통신 준비 중</span>
-  </div>
-  <div class="grid" id="centerGrid"></div>
-  <p class="note" id="logInfo"></p>
-</section>
-
-<section id="screen-camera" class="screen">
-  <div class="top"><h1>촬영용 태블릿</h1><button class="btn dark" onclick="App.show('home')">처음으로</button></div>
-  <h2>경기 코드 입력</h2>
-  <div class="row" style="margin-bottom:16px">
-    <input id="codeInput" class="codeinput" maxlength="6" placeholder="6자리" autocapitalize="characters" autocomplete="off">
-    <button class="btn" onclick="App.submitCode()">코드 입력</button>
-    <span id="codeState" class="badge">코드 없음</span>
-  </div>
-  <h2>담당 베이스 선택</h2>
-  <div class="basepick" id="basePick"></div>
-  <div class="vwrap"><video id="video" playsinline muted></video><canvas id="cv"></canvas></div>
-  <div id="hint"></div>
-  <div class="row" style="margin-bottom:12px">
-    <button id="btnCamOn" class="btn start" onclick="App.startCamera()">카메라 시작</button>
-    <button id="btnCamOff" class="btn stop" onclick="App.stopCamera()" disabled>카메라 종료</button>
-    <button id="btnSetBase" class="btn" onclick="App.setBasePos()">베이스 위치 설정</button>
-    <button class="btn dark" onclick="App.flag()">규칙 위반 의심 신고</button>
-  </div>
-  <div class="statuslist">
-    <div>카메라: <b id="stCam">꺼짐</b></div>
-    <div>AI 인식: <b id="stAi">준비 안 됨</b></div>
-    <div>주자 인식: <b id="stRunner">-</b></div>
-    <div>네트워크: <b id="stNet">연결 안 됨</b></div>
-    <div>경기: <b id="stGame">대기</b></div>
-    <div>베이스 위치: <b id="stPoly">설정 안 됨</b></div>
-  </div>
-  <div id="camVerdict" class="verdict big">대기</div>
-  <div class="reason" id="camReason"></div>
-</section>
-
-<script type="module">
-/* ===== 기본 정보 ===== */
-const BASES=[{id:"1B",label:"1루"},{id:"2B",label:"2루"},{id:"3B",label:"3루"},{id:"HOME",label:"홈"}];
-const VT={SAFE:"SAFE",OUT:"OUT",TOUCH:"접촉 확인",UNKNOWN:"판정 불가",BUSY:"분석 중",NONE:"대기"};
-const $=id=>document.getElementById(id);
-const store={get(k,d){try{return localStorage.getItem(k)??d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
-const MP="https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14";
-const MODEL="https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task";
-
-const S={gameRunning:false,gameCode:"",myCode:store.get("code",""),myBase:store.get("base","1B"),bases:{},log:[],
-  cam:{on:false,ai:"준비 안 됨",runners:"-",net:"연결 안 됨",poly:null,setting:false,verdict:"NONE",reason:"카메라를 시작하세요"}};
-BASES.forEach(b=>S.bases[b.id]={connected:false,verdict:"NONE",reason:"",final:"",flags:0,lastSeen:0,conn:null});
-const loadPoly=()=>{try{S.cam.poly=JSON.parse(store.get("poly-"+S.myBase,"null"))}catch(e){S.cam.poly=null}};
-
-/* ===== 중앙 태블릿 통신 (WebRTC, PeerJS 사용) ===== */
-let cPeer=null;
-function openCenterPeer(){
-  if(cPeer)cPeer.destroy();
-  BASES.forEach(b=>{S.bases[b.id].conn=null;S.bases[b.id].connected=false});
-  $("netInfo").textContent="통신 준비 중...";$("netInfo").className="badge";
-  cPeer=new Peer("tball-"+S.gameCode);
-  cPeer.on("open",()=>{$("netInfo").textContent="통신 준비됨";$("netInfo").className="badge on"});
-  cPeer.on("connection",conn=>{
-    conn.on("data",d=>fromCam(conn,d));
-    conn.on("close",()=>{BASES.forEach(b=>{const x=S.bases[b.id];if(x.conn===conn){x.conn=null;x.connected=false;x.verdict="UNKNOWN";x.reason="카메라 연결 끊김"}});App.render()});
-  });
-  cPeer.on("error",e=>{if(e.type==="unavailable-id")App.newCode();else{$("netInfo").textContent="통신 오류("+e.type+") 인터넷 확인";$("netInfo").className="badge"}});
-}
-function fromCam(conn,d){
-  const b=S.bases[d.base];if(!b)return;
-  b.conn=conn;b.connected=true;b.lastSeen=Date.now();
-  if(d.t==="status"){b.verdict=d.v;b.reason=d.reason}
-  if(d.t==="flag"){b.flags++;S.log.push({time:new Date().toLocaleString(),base:d.base,type:"규칙 위반 의심"})}
-  App.render();
-}
-const broadcast=m=>BASES.forEach(b=>{const c=S.bases[b.id].conn;if(c&&c.open)c.send(m)});
-setInterval(()=>{BASES.forEach(b=>{const x=S.bases[b.id];
-  if(x.connected&&Date.now()-x.lastSeen>6000){x.connected=false;x.verdict="UNKNOWN";x.reason="카메라 연결 끊김";App.render()}})},1000);
-
-/* ===== 촬영 태블릿 통신 ===== */
-let kPeer=null,kConn=null,hb=null,retryT=null;
-function connectCenter(){
-  clearInterval(hb);clearTimeout(retryT);if(kPeer)kPeer.destroy();kPeer=null;kConn=null;
-  if(!S.myCode)return;
-  S.cam.net="연결 중...";App.render();
-  kPeer=new Peer();
-  kPeer.on("open",()=>{
-    kConn=kPeer.connect("tball-"+S.myCode,{reliable:true});
-    kConn.on("open",()=>{S.cam.net="연결됨";sendStatus();App.render()});
-    kConn.on("data",d=>{if(d.t==="start")S.gameRunning=true;if(d.t==="end")S.gameRunning=false;App.render()});
-    kConn.on("close",()=>{S.cam.net="끊김 - 다시 연결 중";App.render();retry()});
-  });
-  kPeer.on("error",e=>{S.cam.net=e.type==="peer-unavailable"?"중앙 태블릿을 못 찾음 (코드 확인)":"연결 실패("+e.type+")";App.render();retry()});
-  hb=setInterval(sendStatus,2000);
-}
-const retry=()=>{clearTimeout(retryT);retryT=setTimeout(connectCenter,5000)};
-const sendStatus=()=>{if(kConn&&kConn.open)kConn.send({t:"status",base:S.myBase,v:S.cam.verdict,reason:S.cam.reason})};
-function setCam(v,reason){
-  if(S.cam.verdict===v&&S.cam.reason===reason)return;
-  S.cam.verdict=v;S.cam.reason=reason;sendStatus();App.render();
-}
-
-/* ===== 카메라 + AI (MediaPipe 자세 인식) ===== */
-let lm=null,stream=null,tracks=[],nextId=1,holdUntil=0,noFeet=0,lastT=0;
-const cv=$("cv"),video=$("video");
-async function loadAI(){
-  if(lm)return true;
-  S.cam.ai="불러오는 중... (인터넷 필요)";App.render();
-  try{
-    const V=await import(MP+"/vision_bundle.mjs");
-    const fs=await V.FilesetResolver.forVisionTasks(MP+"/wasm");
-    const mk=d=>V.PoseLandmarker.createFromOptions(fs,{baseOptions:{modelAssetPath:MODEL,delegate:d},runningMode:"VIDEO",numPoses:4});
-    try{lm=await mk("GPU")}catch(e){lm=await mk("CPU")}
-    S.cam.ai="작동 중";App.render();return true;
-  }catch(e){S.cam.ai="오류: 인터넷 연결 확인";App.render();return false}
-}
-function loop(){
-  if(!S.cam.on||!lm)return;
-  requestAnimationFrame(loop);
-  const now=performance.now();
-  if(now-lastT<66||video.readyState<2)return;
-  lastT=now;
-  if(cv.width!==video.videoWidth){cv.width=video.videoWidth;cv.height=video.videoHeight}
-  const ctx=cv.getContext("2d");ctx.clearRect(0,0,cv.width,cv.height);
-  analyze(lm.detectForVideo(video,now).landmarks||[],ctx);
-}
-const inPoly=(p,poly)=>{let r=false;for(let i=0,j=poly.length-1;i<poly.length;j=i++){
-  const a=poly[i],b=poly[j];if((a.y>p.y)!==(b.y>p.y)&&p.x<(b.x-a.x)*(p.y-a.y)/(b.y-a.y)+a.x)r=!r}return r};
-function analyze(people,ctx){
-  const W=cv.width,H=cv.height,poly=S.cam.poly;
-  ctx.lineWidth=4;ctx.strokeStyle="#f5c400";
-  if(poly){ctx.beginPath();poly.forEach((p,i)=>i?ctx.lineTo(p.x*W,p.y*H):ctx.moveTo(p.x*W,p.y*H));ctx.closePath();ctx.stroke()}
-  // 사람마다 번호를 붙여 따라가기 (가까운 위치끼리 같은 사람으로 판단)
-  const dets=people.map(l=>({l,cx:(l[23].x+l[24].x)/2,cy:(l[23].y+l[24].y)/2}));
-  tracks.forEach(t=>t.seen=false);
-  dets.forEach(d=>{
-    let best=null,bd=0.15;
-    tracks.forEach(t=>{if(t.seen)return;const k=Math.hypot(t.cx-d.cx,t.cy-d.cy);if(k<bd){bd=k;best=t}});
-    if(!best){best={id:nextId++,hit:0,miss:0};tracks.push(best)}
-    Object.assign(best,{cx:d.cx,cy:d.cy,seen:true,miss:0});d.t=best;
-  });
-  tracks.forEach(t=>{if(!t.seen)t.miss++});
-  tracks=tracks.filter(t=>t.miss<30);
-  // 발이 베이스 안에 있는지 확인
-  const c=poly?{x:poly.reduce((s,p)=>s+p.x,0)/4,y:poly.reduce((s,p)=>s+p.y,0)/4}:null;
-  let near=false,hidden=false,touch=false;
-  dets.forEach(d=>{
-    const feet=[29,30,31,32].map(i=>d.l[i]).filter(p=>p&&p.visibility>0.5);
-    d.t.hit=poly&&feet.some(p=>inPoly(p,poly))?d.t.hit+1:0;
-    if(c&&Math.hypot(d.cx-c.x,d.cy-c.y)<0.3){near=true;if(!feet.length)hidden=true}
-    if(d.t.hit>=3)touch=true;
-    ctx.fillStyle="#2f80ed";d.l.forEach(p=>{ctx.beginPath();ctx.arc(p.x*W,p.y*H,4,0,7);ctx.fill()});
-    ctx.fillStyle="#1fb954";feet.forEach(p=>{ctx.beginPath();ctx.arc(p.x*W,p.y*H,8,0,7);ctx.fill()});
-    ctx.fillStyle="#fff";ctx.font="bold 28px sans-serif";ctx.fillText("주자 "+d.t.id,d.cx*W-30,d.cy*H);
-  });
-  const rn=dets.length?dets.length+"명 인식":"없음";
-  if(rn!==S.cam.runners){S.cam.runners=rn;App.render()}
-  if(!poly)return setCam("NONE","베이스 위치를 먼저 설정하세요");
-  noFeet=near&&hidden?noFeet+1:0;
-  const now=Date.now();
-  if(touch){holdUntil=now+3000;return setCam("TOUCH","발이 베이스 안에 3프레임 이상 보임 (화면 2D 기준)")}
-  if(now<holdUntil)return;
-  if(noFeet>45){holdUntil=now+3000;return setCam("UNKNOWN","베이스 근처 선수의 발이 보이지 않음 - 자동 재분석 중")}
-  setCam(near?"BUSY":"NONE",near?"주자가 베이스에 접근 중":dets.length?"베이스 주변 주자 없음":"주자 없음");
-}
-cv.addEventListener("click",e=>{
-  if(!Array.isArray(S.cam.setting))return;
-  const r=cv.getBoundingClientRect();
-  S.cam.setting.push({x:(e.clientX-r.left)/r.width,y:(e.clientY-r.top)/r.height});
-  if(S.cam.setting.length===4){S.cam.poly=S.cam.setting;store.set("poly-"+S.myBase,JSON.stringify(S.cam.poly));S.cam.setting=false}
-  App.render();
-});
-
-/* ===== 버튼 동작 ===== */
-const App=window.App={
-  show(n){document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));$("screen-"+n).classList.add("active");
-    if(n==="center"&&!S.gameCode)this.newCode();
-    if(n==="camera"){loadPoly();if(S.myCode&&!kPeer)connectCenter();$("codeInput").value=S.myCode}this.render()},
-  newCode(){
-    const ch="ABCDEFGHJKMNPQRSTUVWXYZ23456789";let c="";
-    for(let i=0;i<6;i++)c+=ch[Math.floor(Math.random()*ch.length)];
-    S.gameCode=c;openCenterPeer();this.render();
-  },
-  submitCode(){
-    const c=$("codeInput").value.trim().toUpperCase();
-    if(!/^[A-Z0-9]{6}$/.test(c))return alert("경기 코드는 영어 글자와 숫자 6자리입니다.");
-    S.myCode=c;store.set("code",c);connectCenter();
-  },
-  selectBase(id){S.myBase=id;store.set("base",id);loadPoly();S.cam.setting=false;tracks=[];sendStatus();this.render()},
-  setBasePos(){
-    if(!S.cam.on)return alert("먼저 카메라를 시작하세요.");
-    S.cam.setting=[];this.render();
-  },
-  async startCamera(){
-    try{stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:"environment",width:{ideal:1280},height:{ideal:720}},audio:false})}
-    catch(e){return alert("카메라를 켤 수 없습니다. 브라우저의 카메라 허용을 눌러 주세요.")}
-    video.srcObject=stream;await video.play();S.cam.on=true;this.render();
-    if(await loadAI())loop();
-  },
-  stopCamera(){
-    if(stream)stream.getTracks().forEach(t=>t.stop());
-    video.srcObject=null;S.cam.on=false;S.cam.runners="-";
-    cv.getContext("2d").clearRect(0,0,cv.width,cv.height);
-    setCam("UNKNOWN","카메라가 꺼짐");this.render();
-  },
-  flag(){
-    if(!kConn||!kConn.open)return alert("중앙 태블릿과 연결된 뒤에 신고할 수 있습니다.");
-    kConn.send({t:"flag",base:S.myBase});alert("중앙 심판에게 전달했습니다.");
-  },
-  startGame(){
-    const no=BASES.filter(b=>!S.bases[b.id].connected).map(b=>b.label);
-    if(no.length)return alert("아직 연결되지 않은 카메라: "+no.join(", "));
-    BASES.forEach(b=>S.bases[b.id].final="");
-    S.gameRunning=true;broadcast({t:"start"});this.render();
-  },
-  endGame(){
-    if(!confirm("경기를 종료할까요?"))return;
-    S.gameRunning=false;broadcast({t:"end"});this.render();
-  },
-  decide(id,f){
-    S.bases[id].final=f;
-    S.log.push({time:new Date().toLocaleString(),base:id,type:"판정",ai:VT[S.bases[id].verdict],final:f});
-    this.render();
-  },
-  render(){
-    $("centerGrid").innerHTML=BASES.map(b=>{const d=S.bases[b.id];return `<div class="card">
-      <div class="row" style="justify-content:space-between"><span class="name">${b.label}</span>
-      <span class="badge ${d.connected?"on":""}">${d.connected?"연결됨":"연결 안 됨"}</span></div>
-      <div class="verdict ${d.verdict}">${VT[d.verdict]}</div>
-      <div class="reason">${d.reason||""}${d.flags?` ⚠ 규칙 위반 의심 ${d.flags}건`:""}</div>
-      <div class="final">${d.final?"최종 판정: "+d.final:"최종 판정 대기"}</div>
-      <div class="row" style="margin-top:8px">
-        <button class="btn sm start" onclick="App.decide('${b.id}','SAFE')">SAFE</button>
-        <button class="btn sm stop" onclick="App.decide('${b.id}','OUT')">OUT</button>
-        <button class="btn sm" style="background:var(--unknown);border-color:var(--unknown)" onclick="App.decide('${b.id}','판정 불가')">판정 불가</button>
-      </div></div>`}).join("");
-    $("centerCode").textContent=S.gameCode||"------";
-    $("gameState").textContent=S.gameRunning?"경기 진행 중":"경기 대기 중";
-    $("gameState").className="badge"+(S.gameRunning?" on":"");
-    $("btnStart").disabled=S.gameRunning;$("btnEnd").disabled=!S.gameRunning;$("btnNewCode").disabled=S.gameRunning;
-    const n=f=>S.log.filter(x=>x.final===f).length;
-    $("logInfo").textContent=`기록 ${S.log.length}건 · SAFE ${n("SAFE")} · OUT ${n("OUT")} · 판정 불가 ${n("판정 불가")} · 위반 의심 ${S.log.filter(x=>x.type==="규칙 위반 의심").length} (아직 화면을 닫으면 사라집니다. 저장은 12단계)`;
-    $("basePick").innerHTML=BASES.map(b=>`<button class="btn ${S.myBase===b.id?"sel":""}" onclick="App.selectBase('${b.id}')">${b.label}</button>`).join("");
-    $("codeState").textContent=S.myCode?"코드: "+S.myCode:"코드 없음";$("codeState").className="badge"+(S.myCode?" on":"");
-    $("stCam").textContent=S.cam.on?"켜짐":"꺼짐";$("stAi").textContent=S.cam.ai;
-    $("stRunner").textContent=S.cam.runners;$("stNet").textContent=S.cam.net;
-    $("stGame").textContent=S.gameRunning?"진행 중":"대기";$("stPoly").textContent=S.cam.poly?"설정됨":"설정 안 됨";
-    $("btnCamOn").disabled=S.cam.on;$("btnCamOff").disabled=!S.cam.on;
-    $("hint").textContent=Array.isArray(S.cam.setting)?`베이스 모서리 4곳을 순서대로 터치하세요 (${S.cam.setting.length}/4)`:"";
-    $("camVerdict").className="verdict big "+S.cam.verdict;$("camVerdict").textContent=VT[S.cam.verdict];
-    $("camReason").textContent=S.cam.reason;
+  @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+  * { font-family: 'Pretendard', sans-serif; -webkit-tap-highlight-color: transparent; }
+  
+  /* Baseball Diamond Styling */
+  .diamond-container {
+    position: relative;
+    width: 280px;
+    height: 280px;
+    margin: 0 auto;
   }
-};
-loadPoly();App.render();
-</script>
+  .diamond-field {
+    position: absolute;
+    width: 180px;
+    height: 180px;
+    top: 50px;
+    left: 50px;
+    background: rgba(34, 197, 94, 0.15);
+    border: 3px solid rgba(255, 255, 255, 0.2);
+    transform: rotate(45deg);
+    border-radius: 16px;
+  }
+  .base-btn {
+    position: absolute;
+    width: 64px;
+    height: 64px;
+    border-radius: 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 14px rgba(0,0,0,0.4);
+    z-index: 10;
+  }
+  .base-btn:active { transform: scale(0.92); }
+  
+  /* Diamond positions */
+  .base-home { bottom: 10px; left: 108px; }
+  .base-1b   { top: 108px; right: 10px; }
+  .base-2b   { top: 10px; left: 108px; }
+  .base-3b   { top: 108px; left: 10px; }
+
+  /* Base selection active glows */
+  .base-btn.selected {
+    ring: 4px;
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.6);
+    transform: scale(1.1);
+  }
+
+  /* Camera Overlay Target Guide */
+  .guide-box {
+    box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.45);
+  }
+</style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col justify-between selection:bg-blue-500 selection:text-white">
+
+  <!-- TOP HEADER -->
+  <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-50 px-4 py-3 flex items-center justify-between">
+    <div class="flex items-center gap-3 cursor-pointer" onclick="App.show('home')">
+      <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center font-black text-xl shadow-lg shadow-blue-500/30">
+        ⚾
+      </div>
+      <div>
+        <h1 class="font-extrabold text-lg leading-tight tracking-tight text-white">AI T-BALL UMPIRE</h1>
+        <p class="text-xs text-slate-400 font-medium">스마트 비전 베이스 심판 시스템</p>
+      </div>
+    </div>
+    <div id="headerBadge" class="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-800 border border-slate-700 text-xs font-semibold text-slate-300">
+      <span class="w-2 h-2 rounded-full bg-slate-500" id="headerDot"></span>
+      <span id="headerRole">역할 미선택</span>
+    </div>
+  </header>
+
+  <!-- MAIN CONTAINER -->
+  <main class="flex-1 max-w-4xl w-full mx-auto p-4 sm:p-6">
+
+    <!-- 1. HOME SCREEN: ROLE SELECTION -->
+    <section id="screen-home" class="screen space-y-6 py-6 animate-fade-in">
+      <div class="text-center space-y-2">
+        <h2 class="text-2xl sm:text-3xl font-black tracking-tight text-slate-100">태블릿 역할을 선택하세요</h2>
+        <p class="text-slate-400 text-sm sm:text-base">경기당 1대의 중앙 심판기와 최대 4대의 베이스 촬영기가 사용됩니다.</p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-5 pt-4">
+        <!-- Main Umpire Card -->
+        <button onclick="App.selectRole('center')" class="group relative overflow-hidden text-left p-6 rounded-3xl bg-slate-900 border-2 border-slate-800 hover:border-blue-500/80 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-500/10">
+          <div class="flex items-center justify-between mb-4">
+            <div class="w-14 h-14 rounded-2xl bg-blue-500/10 border border-blue-500/20 text-blue-400 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
+              <i class="fa-solid fa-tv"></i>
+            </div>
+            <span class="px-3 py-1 rounded-full text-xs font-bold bg-blue-500/10 text-blue-400 border border-blue-500/20">메인 화면</span>
+          </div>
+          <h3 class="text-xl font-bold text-white mb-1">중앙 심판 화면 (본부석)</h3>
+          <p class="text-sm text-slate-400 mb-4">모든 베이스의 판정(SAFE/OUT)을 실시간 모니터링하고 경기 진행을 총괄합니다.</p>
+          <div class="flex items-center text-xs font-bold text-blue-400 group-hover:translate-x-1 transition-transform">
+            중앙 대시보드 진입 <i class="fa-solid fa-arrow-right ml-1.5"></i>
+          </div>
+        </button>
+
+        <!-- Camera Tablet Card -->
+        <button onclick="App.selectRole('camera')" class="group relative overflow-hidden text-left p-6 rounded-3xl bg-slate-900 border-2 border-slate-800 hover:border-emerald-500/80 transition-all duration-300 hover:shadow-2xl hover:shadow-emerald-500/10">
+          <div class="flex items-center justify-between mb-4">
+            <div class="w-14 h-14 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
+              <i class="fa-solid fa-video"></i>
+            </div>
+            <span class="px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">촬영 전용</span>
+          </div>
+          <h3 class="text-xl font-bold text-white mb-1">베이스 촬영용 태블릿</h3>
+          <p class="text-sm text-slate-400 mb-4">1루, 2루, 3루, 홈베이스 중 하나에 삼각대로 고정하여 판정을 촬영합니다.</p>
+          <div class="flex items-center text-xs font-bold text-emerald-400 group-hover:translate-x-1 transition-transform">
+            쉬운 베이스 설정 시작 <i class="fa-solid fa-arrow-right ml-1.5"></i>
+          </div>
+        </button>
+      </div>
+    </section>
+
+    <!-- 2. MAIN UMPIRE SCREEN -->
+    <section id="screen-center" class="screen hidden space-y-6">
+      <!-- Top Status Header -->
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-3xl bg-slate-900 border border-slate-800">
+        <div class="flex items-center gap-3">
+          <span id="gameStateBadge" class="px-3.5 py-1.5 rounded-full text-xs font-extrabold bg-slate-800 text-slate-400 border border-slate-700 flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-slate-500"></span> 경기 대기 중
+          </span>
+          <div class="h-4 w-[1px] bg-slate-800"></div>
+          <div class="flex items-center gap-2">
+            <span class="text-xs text-slate-400 font-medium">연결 코드:</span>
+            <span id="centerCode" class="font-mono font-black text-lg text-yellow-400 tracking-wider">------</span>
+            <button onclick="App.newCode()" class="text-slate-400 hover:text-white p-1 text-xs" title="새 코드 재발급">
+              <i class="fa-solid fa-arrows-rotate"></i>
+            </button>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <button id="btnStart" onclick="App.startGame()" class="flex-1 sm:flex-none px-5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-sm transition-all shadow-lg shadow-emerald-500/20 disabled:opacity-40 disabled:pointer-events-none">
+            <i class="fa-solid fa-play mr-1.5"></i> 경기 시작
+          </button>
+          <button id="btnEnd" onclick="App.endGame()" disabled class="flex-1 sm:flex-none px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-sm transition-all disabled:opacity-40 disabled:pointer-events-none">
+            <i class="fa-solid fa-square mr-1.5"></i> 종료
+          </button>
+          <button onclick="App.show('home')" class="px-3 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-sm">
+            <i class="fa-solid fa-house"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Live Base Verdict Grid -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4" id="centerGrid">
+        <!-- Rendered dynamically -->
+      </div>
+
+      <!-- Quick Test Panel -->
+      <div class="p-5 rounded-3xl bg-slate-900/60 border border-slate-800/80 space-y-3">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+            <i class="fa-solid fa-vial text-blue-400"></i> 테스트 및 시뮬레이션 제어
+          </span>
+          <span class="text-xs text-slate-500">실제 AI 연동 전 연출 테스트용</span>
+        </div>
+        <div class="flex flex-wrap gap-2">
+          <button onclick="testConnectAll()" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-emerald-400 border border-emerald-500/30">
+            <i class="fa-solid fa-plug mr-1"></i> 4개 베이스 전체 연결
+          </button>
+          <button onclick="testDisconnectAll()" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-rose-400 border border-rose-500/30">
+            <i class="fa-solid fa-power-off mr-1"></i> 모두 연결 해제
+          </button>
+        </div>
+        <div class="flex flex-wrap gap-2 pt-1" id="centerDevBtns">
+          <!-- Dev verdict test buttons -->
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. EASY BASE SETUP & CAMERA SCREEN -->
+    <section id="screen-camera" class="screen hidden space-y-6">
+      
+      <!-- Top Nav -->
+      <div class="flex items-center justify-between border-b border-slate-800 pb-4">
+        <div>
+          <h2 class="text-xl font-bold text-white flex items-center gap-2">
+            <i class="fa-solid fa-sliders text-emerald-400"></i> 베이스 간편 설정
+          </h2>
+          <p class="text-xs text-slate-400">단계별로 따라하면 베이스 설정이 빠르게 완료됩니다.</p>
+        </div>
+        <button onclick="App.show('home')" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold">
+          <i class="fa-solid fa-house mr-1"></i> 처음으로
+        </button>
+      </div>
+
+      <!-- STEP 1: Game Code Connection -->
+      <div class="p-5 rounded-3xl bg-slate-900 border border-slate-800 space-y-3">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="w-6 h-6 rounded-full bg-blue-500/20 text-blue-400 font-bold text-xs flex items-center justify-center border border-blue-500/30">1</span>
+            <h3 class="font-bold text-sm text-slate-200">중앙 경기 코드 연결</h3>
+          </div>
+          <span id="codeStatusBadge" class="px-2.5 py-1 rounded-full text-xs font-bold bg-slate-800 text-slate-400 border border-slate-700">
+            미연결
+          </span>
+        </div>
+
+        <div class="flex gap-2">
+          <input id="codeInput" type="text" maxlength="6" placeholder="코드 6자리" autocapitalize="characters" autocomplete="off"
+            class="flex-1 bg-slate-950 border-2 border-slate-800 focus:border-blue-500 rounded-xl px-4 py-2.5 font-mono font-black text-xl text-center text-yellow-400 tracking-widest uppercase outline-none transition-colors">
+          <button onclick="App.submitCode()" class="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm rounded-xl transition-all shadow-lg shadow-blue-600/20">
+            연결
+          </button>
+        </div>
+      </div>
+
+      <!-- STEP 2: Visual Base Selector (Baseball Diamond) -->
+      <div class="p-5 rounded-3xl bg-slate-900 border border-slate-800 space-y-4">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="w-6 h-6 rounded-full bg-blue-500/20 text-blue-400 font-bold text-xs flex items-center justify-center border border-blue-500/30">2</span>
+            <h3 class="font-bold text-sm text-slate-200">담당 베이스 터치하여 선택</h3>
+          </div>
+          <span class="text-xs text-slate-400">현재 선택: <strong id="selectedBaseLabel" class="text-emerald-400 font-black">1루</strong></span>
+        </div>
+
+        <!-- Interactive Baseball Field Layout -->
+        <div class="py-4">
+          <div class="diamond-container">
+            <div class="diamond-field"></div>
+            <!-- Base Buttons placed geographically -->
+            <button onclick="App.selectBase('2B')" id="btn-2B" class="base-btn base-2b bg-slate-800 border-2 border-slate-700 text-slate-300">
+              <span class="text-xs opacity-70">2루</span>
+              <i class="fa-solid fa-[#2B] text-sm mt-0.5">2B</i>
+            </button>
+            <button onclick="App.selectBase('3B')" id="btn-3B" class="base-btn base-3b bg-slate-800 border-2 border-slate-700 text-slate-300">
+              <span class="text-xs opacity-70">3루</span>
+              <i class="fa-solid fa-[#3B] text-sm mt-0.5">3B</i>
+            </button>
+            <button onclick="App.selectBase('1B')" id="btn-1B" class="base-btn base-1b bg-slate-800 border-2 border-slate-700 text-slate-300">
+              <span class="text-xs opacity-70">1루</span>
+              <i class="fa-solid fa-[#1B] text-sm mt-0.5">1B</i>
+            </button>
+            <button onclick="App.selectBase('HOME')" id="btn-HOME" class="base-btn base-home bg-slate-800 border-2 border-slate-700 text-slate-300">
+              <span class="text-xs opacity-70">홈</span>
+              <i class="fa-solid fa-[#HOME] text-sm mt-0.5">HM</i>
+            </button>
+          </div>
+          <p class="text-center text-xs text-slate-400 mt-2">
+            💡 초록색 테두리로 활성화된 베이스가 이 태블릿이 심판할 위치입니다.
+          </p>
+        </div>
+      </div>
+
+      <!-- STEP 3: Camera Preview & Angle Guide -->
+      <div class="p-5 rounded-3xl bg-slate-900 border border-slate-800 space-y-4">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="w-6 h-6 rounded-full bg-blue-500/20 text-blue-400 font-bold text-xs flex items-center justify-center border border-blue-500/30">3</span>
+            <h3 class="font-bold text-sm text-slate-200">카메라 앵글 및 가이드 맞추기</h3>
+          </div>
+          <div class="flex gap-2">
+            <button id="btnCamStart" onclick="App.startWebcam()" class="px-3 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs transition-all shadow-md">
+              <i class="fa-solid fa-video mr-1"></i> 카메라 켜기
+            </button>
+            <button id="btnCamStop" onclick="App.stopWebcam()" disabled class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 font-semibold text-xs transition-all disabled:opacity-40">
+              꺼짐
+            </button>
+          </div>
+        </div>
+
+        <!-- Video Viewport & Target Guide -->
+        <div class="relative w-full aspect-video rounded-2xl bg-slate-950 border-2 border-dashed border-slate-800 overflow-hidden flex items-center justify-center">
+          <video id="webcamVideo" autoplay playsinline muted class="w-full h-full object-cover hidden"></video>
+          
+          <!-- Default Placeholder when camera off -->
+          <div id="videoPlaceholder" class="text-center space-y-2 p-4">
+            <div class="w-12 h-12 rounded-full bg-slate-900 text-slate-500 flex items-center justify-center mx-auto text-xl">
+              <i class="fa-solid fa-camera font-normal"></i>
+            </div>
+            <p class="text-sm font-medium text-slate-400">'카메라 켜기' 버튼을 눌러 촬영 앵글을 확인하세요</p>
+          </div>
+
+          <!-- Overlay Angle Target Guide -->
+          <div id="cameraGuideOverlay" class="hidden absolute inset-0 pointer-events-none flex flex-col items-center justify-center">
+            <!-- Target Box -->
+            <div class="w-48 h-48 border-2 border-emerald-400/80 rounded-2xl relative flex items-center justify-center animate-pulse">
+              <div class="absolute -top-6 bg-emerald-500 text-slate-950 text-[10px] font-black px-2 py-0.5 rounded-md uppercase tracking-wider">
+                베이스를 사각형 안에 맞추세요
+              </div>
+              <div class="w-3 h-3 bg-emerald-400 rounded-full"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- System Diagnostics Grid -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs">
+          <div class="p-3 rounded-xl bg-slate-950 border border-slate-800">
+            <div class="text-slate-500 mb-0.5">카메라 상태</div>
+            <div id="stCam" class="font-bold text-slate-300">꺼짐</div>
+          </div>
+          <div class="p-3 rounded-xl bg-slate-950 border border-slate-800">
+            <div class="text-slate-500 mb-0.5">AI 엔진</div>
+            <div id="stAi" class="font-bold text-emerald-400">대기 중</div>
+          </div>
+          <div class="p-3 rounded-xl bg-slate-950 border border-slate-800">
+            <div class="text-slate-500 mb-0.5">주자 감지</div>
+            <div id="stRunner" class="font-bold text-slate-300">감지 안 됨</div>
+          </div>
+          <div class="p-3 rounded-xl bg-slate-950 border border-slate-800">
+            <div class="text-slate-500 mb-0.5">네트워크</div>
+            <div id="stNet" class="font-bold text-slate-400">미연결</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP 4: Live Verdict Output Banner -->
+      <div class="p-6 rounded-3xl bg-slate-900 border border-slate-800 text-center space-y-2">
+        <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">실시간 AI 판정 출력</span>
+        <div id="camVerdict" class="text-5xl font-black py-4 rounded-2xl bg-slate-950 text-slate-600 tracking-wider">
+          NONE
+        </div>
+      </div>
+
+      <!-- Test Controls -->
+      <div class="p-4 rounded-2xl bg-slate-900/50 border border-slate-800/60 space-y-2">
+        <span class="text-xs font-bold text-slate-400">🧪 촬영 태블릿 판정 연출 테스트</span>
+        <div class="flex flex-wrap gap-2" id="camDevBtns"></div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="border-t border-slate-800/80 bg-slate-950 px-4 py-3 text-center text-xs text-slate-500">
+    AI T-BALL UMPIRE SYSTEM &copy; 2026 • 초간편 베이스 설정 인터페이스
+  </footer>
+
+  <!-- JAVASCRIPT LOGIC -->
+  <script>
+    const BASES = [
+      { id: "1B", label: "1루", icon: "1B" },
+      { id: "2B", label: "2루", icon: "2B" },
+      { id: "3B", label: "3루", icon: "3B" },
+      { id: "HOME", label: "홈", icon: "HM" }
+    ];
+
+    const VERDICT_CONFIG = {
+      SAFE:    { label: "SAFE",    bg: "bg-emerald-500", text: "text-slate-950" },
+      OUT:     { label: "OUT",     bg: "bg-rose-600",    text: "text-white" },
+      UNKNOWN: { label: "판정 불가", bg: "bg-amber-400",   text: "text-slate-950" },
+      BUSY:    { label: "분석 중...", bg: "bg-blue-600",    text: "text-white animate-pulse" },
+      NONE:    { label: "대기",     bg: "bg-slate-950",   text: "text-slate-600" }
+    };
+
+    const App = {
+      state: {
+        role: null,
+        gameRunning: false,
+        myBase: "1B",
+        gameCode: "",
+        myCode: "",
+        webcamStream: null,
+        bases: {
+          "1B":   { connected: false, verdict: "NONE" },
+          "2B":   { connected: false, verdict: "NONE" },
+          "3B":   { connected: false, verdict: "NONE" },
+          "HOME": { connected: false, verdict: "NONE" }
+        }
+      },
+
+      init() {
+        this.newCode();
+        this.renderDevBtns();
+        this.render();
+      },
+
+      show(screenName) {
+        document.querySelectorAll(".screen").forEach(el => el.classList.add("hidden"));
+        document.getElementById("screen-" + screenName).classList.remove("hidden");
+        
+        // Update header status
+        const roleText = screenName === 'center' ? '중앙 심판' : (screenName === 'camera' ? '촬영용 카메라' : '역할 미선택');
+        document.getElementById("headerRole").textContent = roleText;
+        document.getElementById("headerBadge").classList.toggle("hidden", screenName === 'home');
+      },
+
+      selectRole(role) {
+        this.state.role = role;
+        if (role === 'camera') {
+          // Auto select first unconnected base for convenience
+          const unconnected = BASES.find(b => !this.state.bases[b.id].connected);
+          if (unconnected) this.state.myBase = unconnected.id;
+        }
+        this.show(role);
+        this.render();
+      },
+
+      selectBase(baseId) {
+        this.state.myBase = baseId;
+        // Haptic feedback if available
+        if (navigator.vibrate) navigator.vibrate(40);
+        this.render();
+      },
+
+      newCode() {
+        const chars = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
+        let code = "";
+        for (let i = 0; i < 6; i++) code += chars.charAt(Math.floor(Math.random() * chars.length));
+        this.state.gameCode = code;
+        this.render();
+      },
+
+      submitCode() {
+        const input = document.getElementById("codeInput");
+        const val = input.value.trim().toUpperCase();
+        if (!/^[A-Z0-9]{6}$/.test(val)) {
+          alert("경기 코드는 6자리 영문/숫자조합입니다.");
+          return;
+        }
+        this.state.myCode = val;
+        // Automatically mock connect when code is entered
+        this.state.bases[this.state.myBase].connected = true;
+        this.render();
+      },
+
+      setVerdict(baseId, verdict) {
+        this.state.bases[baseId].verdict = verdict;
+        this.render();
+      },
+
+      setConnected(baseId, isConnected) {
+        this.state.bases[baseId].connected = isConnected;
+        this.render();
+      },
+
+      startGame() {
+        const notReady = BASES.filter(b => !this.state.bases[b.id].connected).map(b => b.label);
+        if (notReady.length > 0) {
+          alert(`아직 연결되지 않은 베이스: ${notReady.join(", ")}\n모든 카메라가 연결되어야 경기를 시작할 수 있습니다.`);
+          return;
+        }
+        this.state.gameRunning = true;
+        this.render();
+      },
+
+      endGame() {
+        if (!confirm("경기를 종료할까요?")) return;
+        this.state.gameRunning = false;
+        BASES.forEach(b => this.state.bases[b.id].verdict = "NONE");
+        this.render();
+      },
+
+      // Webcam handling
+      async startWebcam() {
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" }, audio: false });
+          this.state.webcamStream = stream;
+          const videoEl = document.getElementById("webcamVideo");
+          videoEl.srcObject = stream;
+          videoEl.classList.remove("hidden");
+          document.getElementById("videoPlaceholder").classList.add("hidden");
+          document.getElementById("cameraGuideOverlay").classList.remove("hidden");
+          
+          document.getElementById("stCam").textContent = "온라인 (정상)";
+          document.getElementById("stCam").className = "font-bold text-emerald-400";
+          document.getElementById("btnCamStart").disabled = true;
+          document.getElementById("btnCamStop").disabled = false;
+        } catch (err) {
+          alert("카메라에 접근할 수 없습니다: " + err.message);
+        }
+      },
+
+      stopWebcam() {
+        if (this.state.webcamStream) {
+          this.state.webcamStream.getTracks().forEach(track => track.stop());
+          this.state.webcamStream = null;
+        }
+        const videoEl = document.getElementById("webcamVideo");
+        videoEl.classList.add("hidden");
+        document.getElementById("videoPlaceholder").classList.remove("hidden");
+        document.getElementById("cameraGuideOverlay").classList.add("hidden");
+
+        document.getElementById("stCam").textContent = "꺼짐";
+        document.getElementById("stCam").className = "font-bold text-slate-300";
+        document.getElementById("btnCamStart").disabled = false;
+        document.getElementById("btnCamStop").disabled = true;
+      },
+
+      renderDevBtns() {
+        const verdicts = ["SAFE", "OUT", "UNKNOWN", "BUSY", "NONE"];
+        
+        // Center dev buttons
+        const centerDev = document.getElementById("centerDevBtns");
+        centerDev.innerHTML = verdicts.map(v => `
+          <button onclick="testSetAllVerdict('${v}')" class="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-300">
+            ${v}
+          </button>
+        `).join("");
+
+        // Camera dev buttons
+        const camDev = document.getElementById("camDevBtns");
+        camDev.innerHTML = verdicts.map(v => `
+          <button onclick="App.setVerdict(App.state.myBase, '${v}')" class="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-300">
+            ${v}
+          </button>
+        `).join("");
+      },
+
+      render() {
+        const s = this.state;
+
+        // Render Center Screen Cards
+        document.getElementById("centerCode").textContent = s.gameCode || "------";
+        const gsBadge = document.getElementById("gameStateBadge");
+        if (s.gameRunning) {
+          gsBadge.className = "px-3.5 py-1.5 rounded-full text-xs font-extrabold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center gap-2";
+          gsBadge.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> 경기 진행 중`;
+        } else {
+          gsBadge.className = "px-3.5 py-1.5 rounded-full text-xs font-extrabold bg-slate-800 text-slate-400 border border-slate-700 flex items-center gap-2";
+          gsBadge.innerHTML = `<span class="w-2 h-2 rounded-full bg-slate-500"></span> 경기 대기 중`;
+        }
+        document.getElementById("btnStart").disabled = s.gameRunning;
+        document.getElementById("btnEnd").disabled = !s.gameRunning;
+
+        document.getElementById("centerGrid").innerHTML = BASES.map(b => {
+          const data = s.bases[b.id];
+          const vConf = VERDICT_CONFIG[data.verdict] || VERDICT_CONFIG.NONE;
+          return `
+            <div class="p-5 rounded-3xl bg-slate-900 border border-slate-800 flex flex-col justify-between gap-4">
+              <div class="flex items-center justify-between">
+                <span class="text-xl font-black text-white">${b.label} (${b.id})</span>
+                <span class="px-2.5 py-1 rounded-full text-xs font-bold border ${data.connected ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-slate-800 text-slate-500 border-slate-700'}">
+                  ${data.connected ? '● 연결됨' : '○ 미연결'}
+                </span>
+              </div>
+              <div class="py-6 rounded-2xl text-center font-black text-3xl ${vConf.bg} ${vConf.text} shadow-inner transition-all">
+                ${vConf.label}
+              </div>
+            </div>
+          `;
+        }).join("");
+
+        // Render Camera Screen Controls
+        document.getElementById("codeInput").value = s.myCode;
+        const codeBadge = document.getElementById("codeStatusBadge");
+        if (s.myCode) {
+          codeBadge.textContent = "연결 완료: " + s.myCode;
+          codeBadge.className = "px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20";
+        } else {
+          codeBadge.textContent = "미연결";
+          codeBadge.className = "px-2.5 py-1 rounded-full text-xs font-bold bg-slate-800 text-slate-400 border border-slate-700";
+        }
+
+        // Diamond Base Selection Highlighting
+        BASES.forEach(b => {
+          const btn = document.getElementById("btn-" + b.id);
+          const isSelected = s.myBase === b.id;
+          const isConn = s.bases[b.id].connected;
+
+          btn.className = `base-btn base-${b.id.toLowerCase()} ${
+            isSelected 
+              ? 'bg-emerald-500 border-2 border-white text-slate-950 font-black shadow-lg shadow-emerald-500/40 scale-110 z-20' 
+              : (isConn ? 'bg-slate-800 border-2 border-emerald-500/50 text-emerald-400' : 'bg-slate-900 border-2 border-slate-800 text-slate-400')
+          }`;
+        });
+
+        // Current Selected Base Title
+        const currBaseObj = BASES.find(b => b.id === s.myBase);
+        document.getElementById("selectedBaseLabel").textContent = currBaseObj ? currBaseObj.label : s.myBase;
+
+        // Camera Verdict Banner Update
+        const myBaseData = s.bases[s.myBase];
+        const myVConf = VERDICT_CONFIG[myBaseData.verdict] || VERDICT_CONFIG.NONE;
+        const camVerdictEl = document.getElementById("camVerdict");
+        camVerdictEl.className = `text-5xl font-black py-4 rounded-2xl transition-all ${myVConf.bg} ${myVConf.text}`;
+        camVerdictEl.textContent = myVConf.label;
+
+        // Network status indicator
+        document.getElementById("stNet").textContent = myBaseData.connected ? "연결됨" : "미연결";
+        document.getElementById("stNet").className = "font-bold " + (myBaseData.connected ? "text-emerald-400" : "text-slate-400");
+      }
+    };
+
+    // Test Helper Global Functions
+    window.testConnectAll = () => { BASES.forEach(b => App.setConnected(b.id, true)); };
+    window.testDisconnectAll = () => { BASES.forEach(b => App.setConnected(b.id, false)); };
+    window.testSetAllVerdict = (v) => { BASES.forEach(b => App.setVerdict(b.id, v)); };
+
+    // App Initialization
+    window.addEventListener("DOMContentLoaded", () => App.init());
+  </script>
 </body>
 </html>
